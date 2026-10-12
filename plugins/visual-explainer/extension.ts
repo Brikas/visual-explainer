@@ -2,7 +2,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, realpathSync, renameSync, 
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
@@ -148,6 +148,14 @@ function resolveOutputDirectory() {
     path: configured ? resolve(configured) : join(homedir(), ".agent", "diagrams"),
     configured: Boolean(configured),
   };
+}
+
+// Checks the nearest existing ancestor, so a rejected directory is never created through a symlink.
+function assertResolvesToItself(path: string) {
+  let existing = path;
+  while (!lstatSync(existing, { throwIfNoEntry: false })) existing = dirname(existing);
+  const resolved = join(realpathSync(existing), relative(existing, path));
+  if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
 }
 
 function outputFilename(input: string) {
@@ -365,10 +373,9 @@ async function writeRenderedHtml(
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
   if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
+  if (configured) assertResolvesToItself(outputDir);
   mkdirSync(outputDir, { recursive: true });
-  if (configured && realpathSync(outputDir) !== outputDir) {
-    throw new Error(`${outputDir} must not contain symlinks and must resolve to itself`);
-  }
+  if (configured) assertResolvesToItself(outputDir);
   const writeAtomically = (path: string, content: string) => {
     const existing = lstatSync(path, { throwIfNoEntry: false });
     if (existing?.isSymbolicLink()) throw new Error(`${path} must not be a symlink`);

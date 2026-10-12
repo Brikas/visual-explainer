@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -121,6 +121,14 @@ function resolveOutputDirectory() {
     path: configured ? resolve(configured) : join(homedir(), ".agent", "diagrams"),
     configured: Boolean(configured),
   };
+}
+
+// Checks the nearest existing ancestor, so a rejected directory is never created through a symlink.
+function assertResolvesToItself(path) {
+  let existing = path;
+  while (!lstatSync(existing, { throwIfNoEntry: false })) existing = dirname(existing);
+  const resolved = join(realpathSync(existing), relative(existing, path));
+  if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
 }
 
 function assertOutputPathContained(resolvedDir, outputPath) {
@@ -303,12 +311,10 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
 
   const outputDirStatus = lstatSync(outputDir, { throwIfNoEntry: false });
   if (outputDirStatus?.isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
+  if (configured) assertResolvesToItself(outputDir);
   mkdirSync(outputDir, { recursive: true });
-
+  if (configured) assertResolvesToItself(outputDir);
   const resolvedDir = realpathSync(outputDir);
-  if (configured && resolvedDir !== outputDir) {
-    throw new Error(`${outputDir} must not contain symlinks and must resolve to itself`);
-  }
   assertOutputPathContained(resolvedDir, join(resolvedDir, filename));
 
   const outputStatus = lstatSync(outputPath, { throwIfNoEntry: false });
