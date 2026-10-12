@@ -182,10 +182,6 @@ function assertHtmlDocument(html: string) {
 
 const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
-function escapeDisplayMath(html: string) {
-  return html.replace(/\$\$([\s\S]*?)\$\$/g, (_match, math: string) => `$$${math.replace(/</g, "&lt;").replace(/>/g, "&gt;")}$$`);
-}
-
 function ensureFavicon(html: string) {
   if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
   if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
@@ -204,7 +200,7 @@ function ensureDocumentMetadata(html: string) {
 }
 
 function prepareRenderedHtml(html: string) {
-  return ensureDocumentMetadata(ensureFavicon(escapeDisplayMath(html)));
+  return ensureDocumentMetadata(ensureFavicon(html));
 }
 
 type WindowListener = { onMessage: (data: unknown) => void; closed: AbortSignal };
