@@ -164,8 +164,22 @@ function assertHtmlDocument(html) {
 
 const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
+// Comments and elements whose content is not markup are copied unchanged.
+const rawTextOrComment = /<!--[\s\S]*?(?:-->|$)|<(script|style|textarea|title)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi;
+const markupInMath = /<\/?[A-Za-z][^<>]*>|<!--/;
+
+function escapeMathText(text) {
+  return text.replace(/\$\$([\s\S]*?)\$\$/g, (span, math) => (markupInMath.test(math) ? span : `$$${math.replace(/</g, "&lt;")}$$`));
+}
+
 function escapeDisplayMath(html) {
-  return html.replace(/\$\$([\s\S]*?)\$\$/g, (_match, math) => `$$${math.replace(/</g, "&lt;").replace(/>/g, "&gt;")}$$`);
+  let output = "";
+  let last = 0;
+  for (const match of html.matchAll(rawTextOrComment)) {
+    output += escapeMathText(html.slice(last, match.index)) + match[0];
+    last = match.index + match[0].length;
+  }
+  return output + escapeMathText(html.slice(last));
 }
 
 function ensureFavicon(html) {
