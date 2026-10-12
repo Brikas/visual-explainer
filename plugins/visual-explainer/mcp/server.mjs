@@ -164,24 +164,6 @@ function assertHtmlDocument(html) {
 
 const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
-// Copied unchanged: comments, tags (quoted attribute values may hold < and >), and the contents of
-// script, style, textarea, and title. Math is paired only in the text between them.
-const markupRegion = /<!--[\s\S]*?(?:-->|$)|<(script|style|textarea|title)(?=[\s/>])(?:[^<>"']|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<\/?[A-Za-z](?:[^<>"']|"[^"]*"|'[^']*')*>/gi;
-
-function escapeMathText(text) {
-  return text.replace(/\$\$([\s\S]*?)\$\$/g, (_span, math) => `$$${math.replace(/</g, "&lt;")}$$`);
-}
-
-function escapeDisplayMath(html) {
-  let output = "";
-  let last = 0;
-  for (const match of html.matchAll(markupRegion)) {
-    output += escapeMathText(html.slice(last, match.index)) + match[0];
-    last = match.index + match[0].length;
-  }
-  return output + escapeMathText(html.slice(last));
-}
-
 function ensureFavicon(html) {
   if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
   if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
@@ -200,7 +182,7 @@ function ensureDocumentMetadata(html) {
 }
 
 function prepareRenderedHtml(html) {
-  return ensureDocumentMetadata(ensureFavicon(escapeDisplayMath(html)));
+  return ensureDocumentMetadata(ensureFavicon(html));
 }
 
 function runOpener(command, args, openTarget) {
