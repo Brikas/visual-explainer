@@ -126,7 +126,8 @@ function resolveOutputDirectory() {
 // Checks the nearest existing ancestor, so a rejected directory is never created through a symlink.
 function assertResolvesToItself(path) {
   let existing = path;
-  while (!lstatSync(existing, { throwIfNoEntry: false })) existing = dirname(existing);
+  // A missing Windows drive or UNC root is its own dirname; stop there and let realpathSync throw.
+  while (!lstatSync(existing, { throwIfNoEntry: false }) && dirname(existing) !== existing) existing = dirname(existing);
   const resolved = join(realpathSync(existing), relative(existing, path));
   if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
 }
