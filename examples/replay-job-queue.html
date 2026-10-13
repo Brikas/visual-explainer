@@ -188,7 +188,7 @@
     .ve-tok, .ve-vals text:not(:last-child) { display: none; }
   }
   /* showcase: a process figure. Nodes read left-aligned, eyebrow first, like a state-machine diagram. */
-  .ve-proc .ve-svg { min-width: 960px; }
+  @media screen { .ve-proc .ve-svg { min-width: 960px; } }   /* 13-unit labels stay >= 12 px; print fits the page */
   .ve-proc .ve-n text { text-anchor: start; }
   .ve-proc .ve-n text.end { text-anchor: end; }
   .ve-proc .ve-n.is-off .sh { stroke-dasharray: 5 4; filter: none; }
