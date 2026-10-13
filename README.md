@@ -26,9 +26,9 @@ Tables are worse. Ask the agent to compare 15 requirements against a plan and yo
 
 This skill fixes that. Real typography, dark/light themes, hand-drawn diagrams that animate and respond to the reader. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
 
-<img src="replay.gif" alt="A cache diagram stepped one event at a time: the edge that fired lights up and a dot runs along it, then traffic flows on the full picture" width="720">
+<img src="replay.gif" alt="A job queue drawn as a state machine and replayed one event at a time: five jobs pile into the queue, two workers take jobs, a timed-out job lights the retry route back to the end of the queue, the queue drains, then jobs flow through the full picture" width="720">
 
-Step through a process one event at a time: the edge that fired lights up, a dot runs along it, and each step says why it happened.
+Step through a state machine one event at a time: the route each event took lights up, jobs pile into queues and drain, and each step says why it happened ([example](examples/replay-job-queue.html)).
 
 ## Install
 
