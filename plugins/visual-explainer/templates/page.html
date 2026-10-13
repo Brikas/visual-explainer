@@ -112,7 +112,7 @@
   /* replay: the edge that fired lights until the full picture, and one dot runs it once; edge and node still show the step without the dot */
   .ve-steps:not(.is-full) .ve-e.now { stroke: var(--accent); }
   .ve-tok { fill: var(--accent); visibility: hidden; }
-  .ve-steps .ve-tok.now { visibility: visible; animation: ve-run 900ms ease-in-out both; }
+  .ve-steps:not(.is-still) .ve-tok.now { visibility: visible; animation: ve-run 900ms ease-in-out both; }
   @keyframes ve-run { from { offset-distance: 0%; } 75% { opacity: 1; } to { offset-distance: 100%; opacity: 0; } }
   /* a changing value: one text per step at one spot; the latest step's shows, swapped without a crossfade */
   .ve-steps .ve-vals text { transition: none; }
@@ -337,6 +337,7 @@
     if (range) range.max = n - 1;
     const show = (k) => {
       i = Math.max(0, Math.min(n - 1, k));
+      root.classList.remove('is-still');
       for (const el of parts) { el.classList.toggle('on', +el.dataset.s <= i + 1); el.classList.toggle('now', +el.dataset.s === i + 1); }
       caps.forEach((c, j) => c.hidden = j !== i);
       root.classList.toggle('is-full', i === n - 1);
@@ -353,6 +354,7 @@
       timer = setInterval(() => (i < n - 1 ? show(i + 1) : stop()), 3500);
     });
     show(n - 1); // open on the full picture; Play replays from step 1
+    root.classList.add('is-still'); // same task as show(), so the last token never starts until the reader steps
   }
 
   if (!still) {
