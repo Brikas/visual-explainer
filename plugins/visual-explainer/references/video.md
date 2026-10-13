@@ -54,6 +54,7 @@ CSS animations and transitions, the Web Animations API, timers, `requestAnimatio
 - Size for a phone held sideways: body text 24 px or larger, labels 15 px or larger, headings 48–88 px, diagram node text 22, edge labels 17, strokes 2 (hot path 3.5).
 - Keep text 64 px from the sides and 48 px from the top. Keep the bottom 112 px clear for captions.
 - Motion: the scene's base layer enters at its start; each beat adds or changes one thing; paths draw in (`pathLength="1"` plus `stroke-dashoffset`); numbers count up; flow dots move at the real rate. Each change settles within about 1.5 s.
+- A replay of states and events (`diagrams.md`) works as a scene. Copy the template's stepper CSS, put the SVG in `.ve-steps`, and on `ve:beat` give each `[data-s]` part `.on` when its step is at most `e.detail.beat` and `.now` when it equals it. Each sentence then runs one event's token.
 - Under 8 visible boxes per diagram, one focal point per beat.
 
 ## Check, then render

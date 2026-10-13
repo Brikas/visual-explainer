@@ -26,6 +26,10 @@ Tables are worse. Ask the agent to compare 15 requirements against a plan and yo
 
 This skill fixes that. Real typography, dark/light themes, hand-drawn diagrams that animate and respond to the reader. Normal skill use has no build step and no dependency beyond a browser; optional MCP and PPTX utilities use small Node dependencies.
 
+<img src="replay.gif" alt="A cache diagram stepped one event at a time: the edge that fired lights up and a dot runs along it, then traffic flows on the full picture" width="720">
+
+Step through a process one event at a time: the edge that fired lights up, a dot runs along it, and each step says why it happened.
+
 ## Install
 
 | Harness | Support | Install path / behavior |
