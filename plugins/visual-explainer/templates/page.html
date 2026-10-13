@@ -76,7 +76,7 @@
   .ve-n text { fill: var(--text); text-anchor: middle; dominant-baseline: central; font-weight: 600; }
   .ve-n .sub { fill: var(--text-dim); font: 500 14px var(--font-mono); }
   .ve-n .gl { fill: none; stroke: var(--text-dim); stroke-width: 1.5; stroke-linejoin: round; }
-  .ve-n .ve-kind { fill: var(--text-dim); font: 600 13px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+  .ve-n .ve-kind { fill: var(--text-dim); font: 600 14px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
   .ve-n.is-key .gl { stroke: var(--accent); }
   .ve-e { fill: none; stroke: var(--text-dim); stroke-width: 1.75; marker-end: url(#ve-ah); }
   .ve-e.is-hot { stroke: var(--accent); stroke-width: 2.75; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 55%, transparent)); }
@@ -345,7 +345,7 @@
       i = Math.max(0, Math.min(n - 1, k));
       root.classList.remove('is-still');
       // data-s lists the steps a part takes part in: it appears at the first ("0" = from the start) and is .now on each.
-      for (const el of parts) { const s = el.dataset.s.split(' ').map(Number); el.classList.toggle('on', s[0] <= i + 1); el.classList.toggle('now', s.includes(i + 1)); }
+      for (const el of parts) { const s = el.dataset.s.trim().split(' ').map(Number); el.classList.toggle('on', s[0] <= i + 1); el.classList.toggle('now', s.includes(i + 1)); }
       caps.forEach((c, j) => c.hidden = j !== i);
       root.classList.toggle('is-full', i === n - 1);
       root.dispatchEvent(new Event('ve:step'));

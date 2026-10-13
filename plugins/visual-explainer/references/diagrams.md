@@ -113,7 +113,7 @@ When the subject is a state machine, a workflow, or a reducer, make each step on
 <g class="ve-co q" data-s="0 3 5" transform="translate(765 68)"><circle r="11"/><text>3</text></g>   <!-- its number, filled on 3 and 5 -->
 <circle class="ve-tok" data-s="6" r="5" style="offset-path: path('M910 150V295H650V150'); --dur: 2200ms"/>   <!-- a route -->
 <circle class="ve-tok" data-s="1" r="5" style="offset-path: path('M170 90H240'); --d: 130ms"/>   <!-- one of a burst -->
-<g class="ve-at job" data-s="3 4" style="--d: 850ms"><rect x="217" y="72" width="26" height="26" rx="4"/><text x="230" y="85">J3</text></g>
+<g class="ve-at job" data-s="3 4" style="--d: 850ms"><rect x="217" y="72" width="26" height="26" rx="4"/><text x="230" y="85">J3</text></g>   <!-- .ve-at shows and hides it; .job is your own fill and stroke, over an empty slot you draw -->
 <g class="ve-vals"><text class="sub" data-s="0" x="236" y="52">0 / 8</text><text class="sub" data-s="2" x="236" y="52">5 / 8</text></g>
 ```
 
