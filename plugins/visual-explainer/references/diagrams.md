@@ -104,7 +104,7 @@ Open on the complete picture, because the first viewport must show the answer. O
 
 When the subject is a state machine, a workflow, or a reducer, make each step one event. The caption says what happened and why: `miss → fetch, because the TTL expired (cache.ts:48)`. The "because" is the guard or branch that fired. Cite it; never invent it. Pick 6–12 events that carry one claim. Show the other branch as a second stepper or as small multiples, not as more steps. If the events come from a real run, such as a log or a test, say so in the figcaption.
 
-The edge that fired and the parts it changed carry `data-s="N"`. On step N the edge draws in and lights, the node's border lights, and one token runs along the edge once. Nothing moves on its own. Flow dots still start on the full picture.
+The edge that fired and the parts it changed carry `data-s="N"`. On step N the edge draws in and lights, the node's border lights, and one token runs along the edge once. The last step is the full picture, so there only the token runs and the values change. Nothing moves on its own. Flow dots still start on the full picture.
 
 ```html
 <path class="ve-e" data-s="3" pathLength="1" d="M610 105H450"/>
@@ -112,7 +112,7 @@ The edge that fired and the parts it changed carry `data-s="N"`. On step N the e
 <g class="ve-vals"><text class="sub" data-s="2" x="85" y="62">TTL 60 s</text><text class="sub" data-s="4" x="85" y="62">no key</text></g>
 ```
 
-The template's stepper CSS runs the token, and hides it under reduced motion and in print. The token follows any `d`, so one token can run down to a node and back up under it. A value that changes, such as a count, a TTL, or a state name, is one text per step at the same spot inside `.ve-vals`. The latest step's value shows, and print shows the last.
+The template's stepper CSS runs the token, and hides it under reduced motion and in print. The token follows any `d`, so one token can run down to a node and back up under it. A value that changes, such as a count, a TTL, or a state name, is one text per step at the same spot inside `.ve-vals`, written in step order. The latest step's value shows, and print shows the last.
 
 - **Kind labels:** on a process figure, a mono eyebrow above the node name says what the box is: `fact`, `decision`, `state`, or `effect` (12 px, `--text-dim`). Number the edges when the captions refer to them.
 - A machine inside one node is a nested group whose parts carry `data-s` like any other.

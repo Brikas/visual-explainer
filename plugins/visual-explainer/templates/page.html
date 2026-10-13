@@ -241,7 +241,7 @@
         <li data-n="1/5">The client asks the API for user 42.</li>
         <li data-n="2/5">The API asks Redis first.</li>
         <li data-n="3/5">A hit returns in about 1 ms. Done.</li>
-        <li data-n="4/5">A miss reads Postgres in about 9 ms.</li>
+        <li data-n="4/5">A miss reads Postgres in about 9 ms, because the key expired.</li>
         <li data-n="5/5">The API writes the row back, so the next read hits.</li>
       </ol>
       <button data-go="-1" aria-label="Previous step">←</button>
