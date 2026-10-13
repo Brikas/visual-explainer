@@ -117,7 +117,7 @@ When the subject is a state machine, a workflow, or a reducer, make each step on
 <g class="ve-vals"><text class="sub" data-s="0" x="236" y="52">0 / 8</text><text class="sub" data-s="2" x="236" y="52">5 / 8</text></g>
 ```
 
-- **Tokens** follow any `d` and run under the nodes, so a route's token enters each box and leaves from the far side. Put a token that lands in a slot, or leaves one, after the nodes. `--dur` lengthens a run (900 ms by default); `--d` delays it, so a burst is several tokens a step apart.
+- **Tokens** follow any `d` and run under the nodes, so a route's token enters each box and leaves from the far side. Put a token that lands in a slot, or leaves one, after the nodes. `--dur` lengthens a run (900 ms by default); `--d` delays it, so a burst is several tokens about 150 ms apart.
 - **Parts that come and go** are `.ve-at` groups: a job in a queue slot, a busy worker, the ring on the current state of a machine drawn inside a node. One shows only on the steps its `data-s` lists, and `--d` makes it arrive with its token. Draw the empty slot underneath it.
 - **A value that changes,** such as a count, a TTL, or a state name, is one text per step at the same spot inside `.ve-vals`, written in step order. The latest shows.
 - **A shared resource,** such as a worker pool or a set of permits, is a dashed boundary holding its slots and its count.
