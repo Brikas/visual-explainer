@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { renderPageForHost } from "../kit/render.mjs";
+import { renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -62,6 +62,7 @@ const renderOutputSchema = z.object({
   fallbackFrom: openTargetSchema.optional(),
   fallbackError: z.string().optional(),
   source: z.string().optional(),
+  report: z.object({ figures: z.number(), uncaptioned: z.number(), dataTags: z.number(), flows: z.number(), proseWords: z.number() }).optional(),
 });
 
 const promptArgsSchema = z.object({
@@ -314,6 +315,8 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   assertHtmlDocument(htmlInput);
   // MCP cannot put the reader's response into the chat, so plan pages here always copy it instead (no sendBack).
   const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
+  // a plan page has its own summary in its note; every other page gets the report
+  const report = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);
   const html = prepareRenderedHtml(page ? page.html : htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
@@ -352,8 +355,9 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
   if (page) message += page.note;
+  if (report) message += `\n${reportLine(report)}`;
 
-  return { message, output: compact({ path: outputPath, viewer, ...openResult, source }) };
+  return { message, output: compact({ path: outputPath, viewer, ...openResult, source, report }) };
 }
 
 function registerResources(server) {

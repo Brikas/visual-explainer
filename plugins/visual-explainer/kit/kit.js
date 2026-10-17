@@ -96,3 +96,6 @@ if (!still) {
   }, { rootMargin: '0px 0px -10% 0px' });
   for (const el of document.querySelectorAll('main > *')) io.observe(el);
 }
+
+// Last line: kit/check.mjs reads this to tell that the whole script ran.
+document.documentElement.dataset.veKit = "ready";

@@ -6,7 +6,7 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { esc, find, parseHtml, serialize } from "./html.mjs";
+import { esc, find, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
 import { expandFlow } from "./flow.mjs";
 import { TAGS } from "./tags.mjs";
 import { hasPlan, renderPlan, renderPlanForHost } from "../plan/render.mjs";
@@ -23,6 +23,28 @@ const FONTS = {
 
 const isKitLink = (n) => n.name === "link" && "data-ve-kit" in n.attrs;
 
+/** What a reader meets: figures, figures without a caption, expanded tags and flows, and prose words outside figures. */
+function count(doc, tags) {
+  const r = { figures: 0, uncaptioned: 0, dataTags: tags.filter((t) => t.name !== "ve-flow").length, flows: tags.filter((t) => t.name === "ve-flow").length, proseWords: 0 };
+  // a <p> inside an <li> is counted once, with its <li>
+  const visit = (n, quiet) => {
+    for (const c of kids(n)) {
+      if (c.name === "figure") { r.figures++; if (!kids(c).some((k) => k.name === "figcaption")) r.uncaptioned++; }
+      const prose = !quiet && (c.name === "p" || c.name === "li");
+      if (prose) r.proseWords += words(textOf(c));
+      visit(c, quiet || prose || c.name === "figure");
+    }
+  };
+  visit(doc, false);
+  return r;
+}
+
+/** The report for an ordinary page, which renders as given. */
+export const reportPage = (html) => count(parseHtml(html), []);
+
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures`;
+
 /**
  * Inlines the kit at its marker and expands the data tags and <ve-flow>. `kit` is false for a page with neither,
  * which is returned unchanged.
@@ -32,7 +54,7 @@ export function renderPage(source) {
   const doc = parseHtml(source);
   const links = find(doc, isKitLink);
   const tags = find(doc, (n) => Object.hasOwn(TAGS, n.name) || n.name === "ve-flow");
-  if (!links.length && !tags.length) return { html: source, kit: false, errors, warnings };
+  if (!links.length && !tags.length) return { html: source, kit: false, errors, warnings, report: count(doc, tags) };
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
   if (!links.length) errors.push(`${where(tags[0])}: tags need the kit; add <link rel="stylesheet" href="kit.css" data-ve-kit> to <head>`);
@@ -65,7 +87,7 @@ ${css}</style>`;
     scripts[0].html = script;
     for (const s of scripts.slice(1)) s.html = "";
   } else body.children.push({ html: `${script}\n` });
-  return { html: serialize(doc), kit: true, errors, warnings };
+  return { html: serialize(doc), kit: true, errors, warnings, report: count(doc, tags) };
 }
 
 /**
@@ -81,7 +103,7 @@ export function renderPageForHost(html, { root, filename, sendBack = false }) {
   const page = filename.replace(/\.src(\.html?)$/i, "$1");
   const source = page.replace(/\.html?$/i, ".src.html");
   const warned = r.warnings.length ? `\nWarnings:\n${r.warnings.map((w) => `- ${w}`).join("\n")}` : "";
-  return { html: r.html, filename: page, source, kit: true, note: ` Source kept beside it as ${source}; edit it and render again for revisions.${warned}` };
+  return { html: r.html, filename: page, source, kit: true, report: r.report, note: ` Source kept beside it as ${source}; edit it and render again for revisions.${warned}` };
 }
 
 /* ── CLI ── */
@@ -113,11 +135,12 @@ function main() {
     console.log(`✗ ${result.errors.length} error(s), ${result.warnings.length} warning(s); nothing written`);
     process.exit(1);
   }
-  if (flag("--lint")) { console.log(`✓ ${summary}`); return; }
+  const report = result.report ? `\n  ${reportLine(result.report)}` : "";
+  if (flag("--lint")) { console.log(`✓ ${summary}${report}`); return; }
   const temp = `${output}.${process.pid}.tmp`;
   writeFileSync(temp, result.html);
   renameSync(temp, output);
-  console.log(`✓ ${resolve(output)}  ${summary}${result.warnings.length ? ` · ${result.warnings.length} warning(s)` : ""}`);
+  console.log(`✓ ${resolve(output)}  ${summary}${result.warnings.length ? ` · ${result.warnings.length} warning(s)` : ""}${report}`);
   if (flag("--open")) openFile(resolve(output));
 }
 

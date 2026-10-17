@@ -6,7 +6,7 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
-import { renderPageForHost } from "./kit/render.mjs";
+import { renderPageForHost, reportLine, reportPage } from "./kit/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -62,7 +62,10 @@ type RenderDetails = OpenResult & {
   path: string;
   viewer: Viewer;
   source?: string;
+  report?: PageReport;
 };
+
+type PageReport = { figures: number; uncaptioned: number; dataTags: number; flows: number; proseWords: number };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
 
@@ -391,6 +394,8 @@ async function writeRenderedHtml(
   // Only a page Pi opens in Glimpse itself can send the reader's response back into this chat.
   const sendBack = open !== false && viewer !== "browser";
   const page = plan ? renderPageForHost(htmlInput, { root: plan.root, filename: outputFilename(filenameInput), sendBack }) : null;
+  // a plan page has its own summary in its note; every other page gets the report
+  const report: PageReport | undefined = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);
   const html = prepareRenderedHtml(page ? page.html : htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
@@ -444,11 +449,12 @@ async function writeRenderedHtml(
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
   if (page) message += page.note;
+  if (report) message += `\n${reportLine(report)}`;
   if (listener && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") message += " When the reader presses Send to agent, their response arrives here as a plan response message; wait for it.";
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action, path: outputPath, viewer, ...openResult, ...(source ? { source } : {}) },
+    details: { action, path: outputPath, viewer, ...openResult, ...(source ? { source } : {}), ...(report ? { report } : {}) },
   };
 }
 
