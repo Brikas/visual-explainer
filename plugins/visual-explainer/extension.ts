@@ -100,7 +100,7 @@ const visualExplainerParameters = {
     },
     filename: {
       type: "string",
-      description: "For action=render with html: basename or slug for the output file. The tool appends .html if missing.",
+      description: "For action=render with html: basename for the output file; .html is appended if missing.",
     },
     html: {
       type: "string",
@@ -108,7 +108,7 @@ const visualExplainerParameters = {
     },
     path: {
       type: "string",
-      description: "For action=render, instead of html: a <name>.src.html file in the output directory. Edit it and render again for revisions.",
+      description: "For action=render, instead of html: a <name>.src.html file in the output directory.",
     },
     spec: {
       type: "object",
@@ -117,12 +117,12 @@ const visualExplainerParameters = {
     },
     open: {
       type: "boolean",
-      description: "For action=render or render_quick: open the written HTML file in the selected viewer. Defaults to true.",
+      description: "For action=render or render_quick: open the written file. Defaults to true.",
     },
     viewer: {
       type: "string",
       enum: ["browser", "glimpse", "auto"],
-      description: "For action=render or render_quick: choose browser, glimpse, or auto. Auto tries glimpseui first, then falls back to the browser. Defaults to browser.",
+      description: "For action=render or render_quick: browser (default), glimpse, or auto (glimpseui, else the browser)."
     },
   },
   required: ["action"],
@@ -292,21 +292,14 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
   const subagentPrompt = shouldUseSubagent
     ? `Scout the codebase for a visual explanation about ${topic}.${goal ? ` The user goal is: ${goal}.` : ""}${files.length ? ` Start with these files/paths: ${files.join(", ")}.` : ""} Return concise findings, important entities/flows, and visual structure recommendations. Do not edit files.`
     : undefined;
-  const recommendedFlow = shouldUseSubagent
-    ? [
-        "Run a scout subagent to gather repo context and identify the visual structure.",
-        "Synthesize the findings into a concise visual outline for the target audience.",
-        "Read the relevant visual-explainer references or templates before generating the page.",
-        "Write <name>.src.html in the output directory using the visual-explainer skill.",
-        "Call visual_explainer with action=render, path, optional open, and optional viewer.",
-      ]
-    : [
-        "Gather the needed context directly in the main agent.",
-        "Create a concise visual outline for the target audience.",
-        "Read the relevant visual-explainer references or templates before generating the page.",
-        "Write <name>.src.html in the output directory using the visual-explainer skill.",
-        "Call visual_explainer with action=render, path, optional open, and optional viewer.",
-      ];
+  const recommendedFlow = [
+    ...(shouldUseSubagent
+      ? ["Run a scout subagent to gather repo context and identify the visual structure.", "Synthesize the findings into a concise visual outline for the target audience."]
+      : ["Gather the needed context directly in the main agent.", "Create a concise visual outline for the target audience."]),
+    "Read the relevant visual-explainer references or templates before generating the page.",
+    "Write <name>.src.html in the output directory using the visual-explainer skill.",
+    "Call visual_explainer with action=render, path, optional open, and optional viewer.",
+  ];
 
   const summaryLines = [
     `Prepared visual explanation for: ${topic}`,
@@ -461,12 +454,11 @@ export default function (pi: ExtensionAPI) {
     description: "Plan visual explanations, render a page source to HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
     promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source and render_quick only for an explicit supported --quick prompt.",
     promptGuidelines: [
-      "After generating or reviewing a plan, architecture, diff, or substantial implementation, consider offering a visual explanation if it would clarify the work for the user.",
-      "Because visual explanations can consume many tokens, ask before calling visual_explainer with action=prepare unless the user explicitly requested a diagram, visual review, recap, or visual plan.",
-      "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then write the page source and finish with visual_explainer action=render.",
-      "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set) and pass path to action=render. Revise with small edits to that file and render again; never write the page again. Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
-      "Use action=render_quick only when --quick is explicit on generate-web-diagram, diff-review, plan-review, or project-recap. Pass the compact schema spec. If it fails or does not fit, use the full HTML workflow and action=render.",
-      "Render an implementation plan source (<ve-plan> tags, see the skill's references/plans.md) the same way. It checks the plan against the session's cwd.",
+      "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
+      "Visuals cost many tokens: ask before visual_explainer action=prepare unless the user asked for a diagram, visual review, recap, or visual plan. If prepare recommends a scout subagent and one is available, gather context first.",
+      "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR) and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
+      "action=render_quick only for an explicit --quick on generate-web-diagram, diff-review, plan-review, or project-recap; if it fails or does not fit, render the full page.",
+      "A plan source (<ve-plan> tags, references/plans.md) renders the same way, checked against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",

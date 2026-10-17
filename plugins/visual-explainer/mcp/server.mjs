@@ -39,14 +39,14 @@ const prepareOutputSchema = z.object({
 const renderInputSchema = z.object({
   filename: z.string().min(1).optional().describe("With html: basename filename; .html is appended when missing."),
   html: z.string().min(1).optional().describe("Page source or complete HTML, when you cannot write a path."),
-  path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory. Edit it and render again for revisions."),
-  root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its file citations are checked against. Defaults to the server's working directory."),
+  path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory."),
+  root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its citations are checked against. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
 }).strict();
 
 const renderQuickInputSchema = z.object({
-  filename: z.string().min(1).describe("Basename filename. The server appends .html when no .html/.htm suffix is present."),
+  filename: z.string().min(1).describe("Basename filename; .html is appended when missing."),
   spec: z.unknown().describe("Compact JSON spec that follows visual-explainer quick/schema.json."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
@@ -260,11 +260,11 @@ function prepareVisualExplanation(params) {
   const audience = params.audience?.trim();
   const files = params.files?.map((file) => file.trim()).filter(Boolean) ?? [];
   const recommendedFlow = [
-    "Use the visual-explainer prompt or skill resources to choose the page shape.",
-    "Gather and verify the source facts in the host model. The MCP server does not call an LLM.",
-    "For custom output, write <name>.src.html in the output directory and call visual_explainer_render_html with path (without file access: html and filename).",
-    "For explicit quick mode, build a compact spec that follows visual-explainer://quick/schema.json and call visual_explainer_render_quick.",
-    "Keep output filenames as basenames. The MCP server writes only inside its configured output directory (default ~/.agent/diagrams/).",
+    "Choose the page shape with the visual-explainer prompts and skill resources.",
+    "Gather and verify the facts yourself; the server does not call an LLM.",
+    "Write <name>.src.html in the output directory and call visual_explainer_render_html with path (without file access: html and filename).",
+    "For explicit quick mode, build a spec that follows visual-explainer://quick/schema.json and call visual_explainer_render_quick.",
+    "The server writes only inside its output directory (default ~/.agent/diagrams/).",
   ];
 
   const structuredContent = { topic, goal, audience, files, recommendedFlow };
