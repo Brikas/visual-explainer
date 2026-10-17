@@ -42,8 +42,11 @@ export const reportPage = (html) => count(parseHtml(html), []);
 const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures`;
 
-/** Inlines the kit at its marker and expands the data tags and <ve-flow>. A page with neither returns unchanged, with `kit: false`. */
-export function renderPage(source) {
+/**
+ * Inlines the kit at its marker and expands the data tags and <ve-flow>. A page with neither returns unchanged, with `kit: false`.
+ * `sendBack` marks a page Pi opens in Glimpse, so the reader's reply goes to the agent instead of being copied.
+ */
+export function renderPage(source, { sendBack = false } = {}) {
   const errors = [], warnings = [];
   const doc = parseHtml(source);
   const links = find(doc, (n) => n.name === "link" && "data-ve-kit" in n.attrs);
@@ -66,7 +69,8 @@ export function renderPage(source) {
   if (errors.length) return { html: source, kit: true, errors, warnings };
 
   const css = readFileSync(join(here, "kit.css"), "utf8");
-  const script = `<script data-ve-kit>\n${readFileSync(join(here, "kit.js"), "utf8").replace(/<\/script/gi, "<\\/script")}</script>`;
+  const js = ["reply.js", "kit.js"].map((f) => readFileSync(join(here, f), "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
+  const script = `<script data-ve-kit${sendBack ? " data-send-back" : ""}>\n${js}</script>`;
   // without a charset, Firefox and Safari garble · and — (prepareRenderedHtml adds the viewport)
   const charset = find(doc, (n) => n.name === "meta" && ("charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? ""))).length ? "" : '<meta charset="utf-8">\n';
   links[0].html = `${charset}<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,7 +127,7 @@ export function readSourcePath(input, dir) {
 export function renderPageForHost(html, { root, filename, sendBack = false }) {
   const plan = renderPlanForHost(html, { root, filename, sendBack });
   if (plan) return plan;
-  const r = renderPage(html);
+  const r = renderPage(html, { sendBack });
   if (!r.kit) return null;
   if (r.errors.length) throw new Error(`The page has ${r.errors.length} error(s); nothing was written:\n${r.errors.map((e) => `- ${e}`).join("\n")}`);
   const page = filename.replace(/\.src(\.html?)$/i, "$1");

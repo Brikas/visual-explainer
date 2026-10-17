@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Turns a plan source page (<ve-*> tags) into one static, self-contained HTML page.
-// It checks the plan's shape, reads cited code from disk, and inlines plan.css and plan.js.
+// It checks the plan's shape, reads cited code from disk, and inlines plan.css, kit/reply.js, and plan.js.
 // No dependencies, so it runs from a copied skill folder.
 import { readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
@@ -500,7 +500,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   const keepHead = head ? kids(head).filter((k) => !(k.name === "meta" && ("charset" in k.attrs || k.attrs.name === "viewport")) && k.name !== "title").map(serialize).join("\n") : "";
   const hasIcon = head && kids(head).some((k) => k.name === "link" && /icon/.test(k.attrs.rel || ""));
   const css = readFileSync(join(here, "plan.css"), "utf8");
-  const js = readFileSync(join(here, "plan.js"), "utf8").replace(/<\/script/gi, "<\\/script");
+  const js = [join(here, "../kit/reply.js"), join(here, "plan.js")].map((f) => readFileSync(f, "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
   const lang = htmlNode?.attrs.lang || "en";
   const bodyAttrs = body.openRaw.replace(/^<body/i, "").replace(/>$/, "");
   const html = `<!doctype html>
