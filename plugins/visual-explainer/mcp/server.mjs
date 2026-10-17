@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { renderPlanForHost } from "../plan/render.mjs";
+import { renderPageForHost } from "../kit/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -60,7 +60,7 @@ const renderOutputSchema = z.object({
   openError: z.string().optional(),
   fallbackFrom: openTargetSchema.optional(),
   fallbackError: z.string().optional(),
-  planSource: z.string().optional(),
+  source: z.string().optional(),
 });
 
 const promptArgsSchema = z.object({
@@ -300,9 +300,9 @@ function prepareVisualExplanation(params) {
 async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot) {
   assertHtmlDocument(htmlInput);
   // MCP cannot put the reader's response into the chat, so plan pages here always copy it instead (no sendBack).
-  const page = renderPlanForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
+  const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
   const filename = page?.filename ?? outputFilename(filenameInput);
-  const html = page ? page.html : prepareRenderedHtml(htmlInput);
+  const html = prepareRenderedHtml(page ? page.html : htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
 
@@ -317,12 +317,12 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   const outputStatus = lstatSync(outputPath, { throwIfNoEntry: false });
   if (outputStatus?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
 
-  // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  // Keep the source beside the page: revisions and build receipts are small edits to it, then a new render.
   // The source goes first, so a failed write never leaves a new page beside an old source.
-  const planSource = page?.source ? join(outputDir, page.source) : undefined;
-  if (planSource) {
-    if (lstatSync(planSource, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${planSource} must not be a symlink`);
-    writeRenderedFile(planSource, htmlInput);
+  const source = page?.source ? join(outputDir, page.source) : undefined;
+  if (source) {
+    if (lstatSync(source, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${source} must not be a symlink`);
+    writeRenderedFile(source, htmlInput);
   }
   writeRenderedFile(outputPath, html);
 
@@ -340,7 +340,7 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   }
   if (page) message += page.note;
 
-  return { message, output: compact({ path: outputPath, viewer, ...openResult, planSource }) };
+  return { message, output: compact({ path: outputPath, viewer, ...openResult, source }) };
 }
 
 function registerResources(server) {

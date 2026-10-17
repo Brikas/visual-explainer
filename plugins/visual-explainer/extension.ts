@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
-import { renderPlanForHost } from "./plan/render.mjs";
+import { renderPageForHost } from "./kit/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -60,7 +60,7 @@ type RenderDetails = OpenResult & {
   action: "render" | "render_quick";
   path: string;
   viewer: Viewer;
-  planSource?: string;
+  source?: string;
 };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
@@ -364,9 +364,9 @@ async function writeRenderedHtml(
   assertHtmlDocument(htmlInput);
   // Only a page Pi opens in Glimpse itself can send the reader's response back into this chat.
   const sendBack = open !== false && viewer !== "browser";
-  const page = plan ? renderPlanForHost(htmlInput, { root: plan.root, filename: outputFilename(filenameInput), sendBack }) : null;
+  const page = plan ? renderPageForHost(htmlInput, { root: plan.root, filename: outputFilename(filenameInput), sendBack }) : null;
   const filename = page?.filename ?? outputFilename(filenameInput);
-  const html = page ? page.html : prepareRenderedHtml(htmlInput);
+  const html = prepareRenderedHtml(page ? page.html : htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
   if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
@@ -387,15 +387,15 @@ async function writeRenderedHtml(
   };
 
   signal?.throwIfAborted();
-  // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
+  // Keep the source beside the page: revisions and build receipts are small edits to it, then a new render.
   // The source goes first, so a failed write never leaves a new page beside an old source.
-  const planSource = page?.source ? join(outputDir, page.source) : undefined;
-  if (planSource) writeAtomically(planSource, htmlInput);
+  const source = page?.source ? join(outputDir, page.source) : undefined;
+  if (source) writeAtomically(source, htmlInput);
   writeAtomically(outputPath, html);
 
   signal?.throwIfAborted();
 
-  const listener = page && plan ? {
+  const listener = page && !page.kit && plan ? {
     onMessage: (data: unknown) => {
       const d = data as { type?: unknown; markdown?: unknown } | null;
       if (d?.type === "visual-explainer:plan-response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
@@ -422,7 +422,7 @@ async function writeRenderedHtml(
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action, path: outputPath, viewer, ...openResult, ...(planSource ? { planSource } : {}) },
+    details: { action, path: outputPath, viewer, ...openResult, ...(source ? { source } : {}) },
   };
 }
 
