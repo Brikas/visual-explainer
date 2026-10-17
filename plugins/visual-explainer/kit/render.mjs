@@ -68,6 +68,12 @@ export function renderPage(source, { sendBack = false } = {}) {
     return ["data-ref", "data-s"].filter((a) => k.attrs[a] !== undefined).map((a) => ` ${a}="${esc(k.attrs[a])}"`).join("");
   };
   for (const n of find(doc, (x) => "data-if" in x.attrs)) errors.push(`${where(n)}: data-if belongs to plan pages`);
+  // the reader's reply is collected inside <main>, so an ask anywhere else would be answered and never reach the agent
+  if (asks.length) {
+    const main = find(doc, (n) => n.name === "main")[0];
+    const inMain = new Set(main ? find(main, (n) => n.name === "ve-ask") : []);
+    for (const a of asks) if (!inMain.has(a)) errors.push(`${where(a)}: <ve-ask> must be inside <main>, where the reader's reply is collected`);
+  }
   const ids = new Map();
   for (const t of tags) {
     if (t.name === "ve-ask") t.html = expandAsk(t, { errors, warnings, where, ids, k: asks.indexOf(t) + 1, total: asks.length, page: true });
