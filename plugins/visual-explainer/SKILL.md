@@ -21,8 +21,10 @@ Climb as high as the request allows. The default output is one HTML page whose s
 
 ## Deliver
 
-- Write `~/.agent/diagrams/<descriptive-name>.html`, or the path the user gives. One complete file: inline CSS, JS, and SVG favicon. CDN only for fonts and libraries.
-- Pi: `visual_explainer` `prepare` → `render` (ask before `prepare` unless a visual was requested). MCP: render tools default to `open:false`. Elsewhere: write the file and open it. Use `viewer:"glimpse"` only on request.
+- Write the source `~/.agent/diagrams/<descriptive-name>.src.html`, or in the tool's output directory, or at the path the user gives. Pick a register with `<html data-register="…">` and put `<link rel="stylesheet" href="kit.css" data-ve-kit>` in `<head>`. The kit brings the tokens, fonts, figure CSS, and script (`references/kit.md`); add only this page's CSS. CDN only for libraries.
+- Render it to `<name>.html`, one self-contained file. Pi: `visual_explainer` `prepare` → `render` with `path:"<name>.src.html"` (ask before `prepare` unless a visual was requested). MCP: `visual_explainer_render_html` with `path` (no file access: `html` + `filename`); `open` defaults to `false`. Elsewhere: `node <this skill's directory>/kit/render.mjs <name>.src.html --open`. Nothing is written until every `✗` is fixed. Use `viewer:"glimpse"` only on request.
+- Revise with small edits to the `.src.html`, then render again. Never write the whole page again.
+- If `playwright-core` is installed, run `node <this skill's directory>/kit/check.mjs <name>.html` and fix what it reports.
 - If a terminal table would have 4+ rows or 3+ columns, render HTML and reply with one summary line.
 - Write a Markdown companion (`<name>.md` beside the HTML) only when the user asks for AI-readable output or a source brief. HTML stays the source. Ask before you overwrite one.
 - Quick mode: only for a literal `--quick` on `/generate-web-diagram`, `/diff-review`, `/plan-review`, `/project-recap`. Do the same research, read `./quick/README.md` and `./quick/schema.json`, emit the JSON spec, and render with `action:"render_quick"` (Pi) or `node <this skill's directory>/quick/render.mjs spec.json out.html` (resolve the path from the skill directory, not the user's repo). If the content does not fit or rendering fails, use full HTML.
@@ -58,13 +60,13 @@ Shape the page to the content. These are starting points, not templates: merge, 
 | Cards, timelines, file maps, side-by-side | CSS grid/flex |
 | Scenarios, failure modes, options | Small multiples → `references/diagrams.md` |
 | Matrix, audit, many rows of data | `<table>` with status chips |
-| Rates, shares, metrics, trends | Waffle, bars, sparklines in SVG; Chart.js only for many interactive series |
+| Rates, shares, metrics, trends | `<ve-waffle>`, `<ve-bars>`, `<ve-stack>` (`references/kit.md`); sparklines in SVG; Chart.js only for many interactive series |
 | Depth that carries data: embeddings, spatial layouts, geometry | three.js → `references/diagrams.md` |
 | A process that changes over time | Stepper or scene player; a state machine replays one event per step → `references/diagrams.md` |
 | A setting the reader should feel: TTL, rollout %, a policy | Live figure → `references/diagrams.md` |
 | Slide deck | `references/slides.md` + `templates/slide-deck.html` |
 
-Draw every diagram by hand. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. Use Mermaid only when the user asks for it or supplies Mermaid source (see Known traps). `templates/page.html` is the reference build. Copy its parts (tokens, kit CSS, scripts, components), not its outline, and swap in the register the content needs.
+Draw diagrams by hand. Hand-drawn SVG gives exact placement, page fonts, theme tokens, and animation. Tags draw data figures and plain box-and-arrow flows (`<ve-flow>`) for you; never bend a figure to fit a tag. Use Mermaid only when the user asks for it or supplies Mermaid source (see Known traps). Build every part from the kit (`references/kit.md`); do not read or copy `templates/page.html`.
 
 ## Words
 
@@ -110,7 +112,7 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 - Wrap `history.replaceState` in `try/catch`. It throws on `file://` pages.
 - Write `<` as `&lt;` inside KaTeX or MathJax math (`$$ y_{&lt;t} $$`). The browser reads a raw `<t` as a tag before the math library runs.
 - Add section navigation (sticky TOC with scroll-spy) only for 4+ sections.
-- Respect `prefers-reduced-motion`: copy the template's `.js-motion` pattern, so the final state shows without JS, in print, and under reduced motion.
+- Respect `prefers-reduced-motion`. The kit's motion does; your own motion must also show the final state without JS, in print, and under reduced motion.
 
 ## Animate
 
@@ -126,7 +128,11 @@ Make slides only when asked (`/generate-slides`, `--slides`). Read `references/s
 
 ## Images
 
-Optional. If `surf` or another image tool is available, you can embed generated images as base64 for a hero or concept art. Never use images for data or structure. The page must work without them.
+Optional. If `surf` or another image tool is available, you can embed generated images for a hero or concept art. Never use images for data or structure. The page must work without them. Never write base64 yourself: put `<img src="hero.png" alt="…">` in the source, and after each render inline the PNG with a shell step:
+
+```sh
+node -e 'const fs=require("fs"),[f,i]=process.argv.slice(1);fs.writeFileSync(f,fs.readFileSync(f,"utf8").replace(`src="${i}"`,`src="data:image/png;base64,${fs.readFileSync(i,"base64")}"`))' <name>.html hero.png
+```
 
 ## Older recipes (optional)
 

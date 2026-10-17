@@ -9,9 +9,15 @@
 - In Pi, a plan opened in Glimpse sends your response straight into the chat when you press Send to agent. No copy and paste.
 - Diagrams carry more of their numbers and notes on the drawing instead of in paragraphs. A wait, a size, or a time window is drawn as a dimension line on the span it measures. Numbered callouts on a diagram match the steps of its step-through. A finding that lives in one small part, such as file permission bits, gets a close-up of that part.
 - A step-through can replay a state machine one event at a time. The whole machine stays drawn, with a kind label on each box and a number on each edge, while each event lights the route it took and dots run along it. Queues fill and drain, worker slots fill and free up, counts change in place, and a machine drawn inside a box marks its current state. Each caption says why the event happened and cites the code behind it. In a video, the same drawing plays one event per sentence. `examples/replay-job-queue.html` shows all of it. Inspired by the animated state-machine diagrams in [dearlordylord/hapsland](https://github.com/dearlordylord/hapsland).
+- Pages are written as a short source. The agent writes `<name>.src.html` with one kit line in its head, and the renderer adds the shared styles, fonts, diagram parts, and script. The same reference page now takes 3,982 tokens to write instead of 10,911 (64% less), and it renders the same. Pi `render` and MCP `visual_explainer_render_html` take the source as `path`; elsewhere, run `node kit/render.mjs <name>.src.html`.
+- Revisions are small edits to the kept source and a new render, so the agent never writes the whole page again. `/fact-check` corrects pages this way.
+- One kit carries all four looks. A page picks Instrument, Blueprint, Paper, or Editorial with `data-register` on `<html>`, gets that look's fonts and light and dark colors, and its own colors still win.
+- Charts from numbers: `<ve-bars>`, `<ve-waffle>`, and `<ve-stack>` turn a few values into the drawing, with the units on every label and one scale across charts that share a `max`. `<ve-flow>`, the boxes-and-arrows tag from plans, now works on any page, including in a step-through with linked highlighting and a moving dot on each stepped arrow. A mistake stops the render and names its line. Hand-drawn diagrams stay the default.
+- Every render reports its figures, figures without a caption, tags, and prose words in one line. `node kit/check.mjs page.html` opens the page in Chrome at phone and desktop widths and reports script errors, sideways scrolling, and diagram labels under 12 px.
 
 ### Changed
 - `/plan-review` writes its review as a plan page: each finding is a claim with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.
+- Printed pages use their own look's colors on white, so a Blueprint or Paper page prints in its own accent instead of the default amber.
 
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.
@@ -19,6 +25,7 @@
 - In Pi, pressing Send to agent in a Glimpse plan window after `/new`, `/resume`, `/fork`, or `/reload` no longer crashes pi. Ending the session now closes the plan windows it opened, since their responses have nowhere to go. Thanks to [@masonc15](https://github.com/masonc15) for #112.
 - A `VISUAL_EXPLAINER_OUTPUT_DIR` that passes through a symlink is now rejected before the directory is created, and the error shows where the path really leads, such as `/private/tmp` for `/tmp` on macOS. Before, the directory was created through the symlink anyway. The default `~/.agent/diagrams/` still follows a symlinked `~/.agent`, as the docs now say. Thanks to [@tharanee-bit](https://github.com/tharanee-bit) for #115.
 - Rendering a page that uses `$$` outside math, such as a `$$` query helper in a script or prices like `$$5`, no longer breaks the page. Render used to escape `<` and `>` between any two `$$` in the file. It now writes the HTML as given, and the skill tells agents to write `&lt;` inside math. Thanks to [@tharanee-bit](https://github.com/tharanee-bit) for #115.
+- The small failure-mode diagrams of the reference page drew their lower labels at 11.4 px on wide screens. They are now 12.3 px or more at every width.
 
 ## [0.12.0] - 2026-10-02
 

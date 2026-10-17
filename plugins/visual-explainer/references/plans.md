@@ -19,7 +19,7 @@ Write the source with the tags below, then render it. The renderer checks the pl
 node <this skill's directory>/plan/render.mjs ~/.agent/diagrams/<name>.src.html --root <repo> --open
 ```
 
-Fix every `✗` (nothing is written until they are gone) and each `⚠` you cannot defend. Pi: `visual_explainer` `render` expands plan tags too (root = the session's cwd). MCP: `visual_explainer_render_html` with `root`. Keep the `.src.html`: revisions and receipts are small edits to it, then a new render. `templates/plan.html` is a full example; copy its shape.
+Fix every `✗` (nothing is written until they are gone) and each `⚠` you cannot defend. Pi: `visual_explainer` `render` expands plan tags too (root = the session's cwd). MCP: `visual_explainer_render_html` with `root`. Keep the `.src.html`: revisions and receipts are small edits to it, then a new render (Pi and MCP: `path:"<name>.src.html"`). `templates/plan.html` is a full example; copy its shape.
 
 ## The page
 

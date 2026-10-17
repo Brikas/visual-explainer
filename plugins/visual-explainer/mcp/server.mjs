@@ -37,8 +37,8 @@ const prepareOutputSchema = z.object({
 });
 
 const renderInputSchema = z.object({
-  filename: z.string().min(1).optional().describe("With html: basename filename. The server appends .html when no .html/.htm suffix is present."),
-  html: z.string().min(1).optional().describe("Complete self-contained HTML document."),
+  filename: z.string().min(1).optional().describe("With html: basename filename; .html is appended when missing."),
+  html: z.string().min(1).optional().describe("Page source or complete HTML, when you cannot write a path."),
   path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory. Edit it and render again for revisions."),
   root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its file citations are checked against. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
@@ -293,7 +293,7 @@ function prepareVisualExplanation(params) {
   const recommendedFlow = [
     "Use the visual-explainer prompt or skill resources to choose the page shape.",
     "Gather and verify the source facts in the host model. The MCP server does not call an LLM.",
-    "For custom output, generate a complete self-contained HTML document and call visual_explainer_render_html.",
+    "For custom output, write <name>.src.html in the output directory and call visual_explainer_render_html with path (without file access: html and filename).",
     "For explicit quick mode, build a compact spec that follows visual-explainer://quick/schema.json and call visual_explainer_render_quick.",
     "Keep output filenames as basenames. The MCP server writes only inside its configured output directory (default ~/.agent/diagrams/).",
   ];
@@ -420,7 +420,7 @@ function registerTools(server) {
 
   server.registerTool("visual_explainer_render_html", {
     title: "Render Visual Explainer HTML",
-    description: "Validate and write a complete self-contained HTML document to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
+    description: "Render a page source (path) or HTML to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
     inputSchema: renderInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },

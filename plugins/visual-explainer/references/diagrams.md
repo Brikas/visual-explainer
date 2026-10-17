@@ -1,6 +1,6 @@
 # Hand-drawn SVG figures
 
-Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. `templates/page.html` has the CSS and JS for every pattern here except dimensions and callouts, which carry their CSS below. Copy those blocks as they are; this file gives the markup contracts and the rules.
+Inline SVG is the default figure. You control every position, it uses page tokens and fonts, and it can animate. The kit (`kit.md`) has the CSS and JS for every pattern here; this file gives the markup contracts and the rules.
 
 ## Plan on a grid
 
@@ -24,16 +24,11 @@ y:210                  ┌──▼───┐
 - Over about 12 nodes, draw a 5–8 node overview and put the detail in cards or a second figure.
 - Sequence: one column per actor with a thin lifeline, one row per message, time runs down, each arrow labeled with its call. Schema: one box per table with its key fields in mono, crow's-foot ends for many.
 
-## Kit
+## Shapes
 
-```
-page   <svg width=0 height=0> defs once: #ve-ah marker (fill="context-stroke"), #ve-node gradient
-figure <figure> → .frame (dot-grid stage) → svg.ve-svg[role=img][aria-label] → <figcaption>Fig. N + claim
-node   <g class="ve-n [is-key]"> <rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>] </g>
-edge   <path class="ve-e [is-hot|is-async]"/>  + <text class="ve-el [l|r]">verb or value</text>
-```
+Node and edge markup is in `kit.md`.
 
-- **Shape says what a thing is.** Rect for a service. Cylinder for a datastore (`path.sh` body + `ellipse.sh.lid`, as Postgres in the template). Rect with 3 short dividers for a queue. Dashed rect for something optional or down.
+- **Shape says what a thing is.** Rect for a service. Cylinder for a datastore (`path.sh` body + `ellipse.sh.lid`). Rect with 3 short dividers for a queue. Dashed rect for something optional or down.
 - **Glyph** (`.gl`): a 16-unit line drawing in the node's top-left corner, only when the kind is not clear from the name. Stroke `--text-dim`, never filled, never emoji.
 - **Edge language:** solid = sync call · dashed = async or optional · thick glowing accent = the path this figure is about · red ✕ = blocked.
 
@@ -48,12 +43,6 @@ A number that measures a span sits on that span: latency down a sequence diagram
 
 ```html
 <g class="ve-dim"><path class="ext" d="M120 300V322M380 300V322"/><path class="ln" d="M120 316H380M116 320l8-8M376 320l8-8"/><text x="250" y="310">9 ms</text></g>
-```
-
-```css
-.ve-dim path { fill: none; stroke-width: 1; } .ve-dim .ext { stroke: var(--border-bright); } .ve-dim .ln { stroke: var(--text-dim); }
-.ve-dim text { fill: var(--text); font: 500 14px var(--font-mono); text-anchor: middle; }
-.ve-dim.is-key .ln { stroke: var(--accent); } .ve-dim.is-key text { fill: var(--accent); }
 ```
 
 - Extension lines run from the two measured points. The dimension line has a short 45° tick at each end. The value sits centered 6 units above the line, never on it: a line through a value reads as struck out.
@@ -94,14 +83,6 @@ Open on the complete picture, because the first viewport must show the answer. O
 <path class="ann" data-s="3" d="M520 71V96"/><g class="ve-co" data-s="3" transform="translate(520 60)"><circle r="11"/><text>3</text></g>
 ```
 
-```css
-.ve-co circle { fill: var(--surface); stroke: var(--accent); stroke-width: 1.75; }
-.ve-co text { fill: var(--accent); font: 600 14px var(--font-mono); text-anchor: middle; dominant-baseline: central; }
-.ve-co.now circle { fill: var(--accent); } .ve-co.now text { fill: var(--surface); }
-.ve-co.q circle { stroke: var(--border-bright); } .ve-co.q text { fill: var(--text-dim); }   /* an edge number: quiet until its step */
-.ve-co.q.now circle { fill: var(--accent); stroke: var(--accent); } .ve-co.q.now text { fill: var(--surface); }
-```
-
 ## Replay: states and events
 
 When the subject is a state machine, a workflow, or a reducer, make each step one event. The caption says what happened and why: `miss → fetch, because the TTL expired (cache.ts:48)`. The "because" is the guard or branch that fired. Cite it; never invent it. Pick 6–12 events that carry one claim. Show the other branch as a second stepper or as small multiples, not as more steps. If the events come from a real run, such as a log or a test, say so in the figcaption.
@@ -122,7 +103,7 @@ When the subject is a state machine, a workflow, or a reducer, make each step on
 - **A value that changes,** such as a count, a TTL, or a state name, is one text per step at the same spot inside `.ve-vals`, written in step order. The latest shows.
 - **A shared resource,** such as a worker pool or a set of permits, is a dashed boundary holding its slots and its count.
 - **Kind labels:** on a process figure, `<text class="ve-kind">` above the node name says what the box is: `fact`, `decision`, `state`, or `effect`. Number the edges with `.ve-co.q` when the captions refer to them.
-- The template's CSS runs all of this, hides tokens under reduced motion and in print, and prints the last step.
+- The kit runs all of this, hides tokens under reduced motion and in print, and prints the last step.
 
 ## Before / after
 
@@ -140,14 +121,14 @@ Controls that recompute the picture, so the reader feels a setting instead of re
 
 ## Small multiples
 
-For a set of cases (failure modes, options, environments), draw the same small diagram once per case instead of writing a table. Same coordinates in each, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]` sets `--st`; mark the changed parts `.is-st`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 13 units or more, cards at least 14.5rem wide.
+For a set of cases (failure modes, options, environments), draw the same small diagram once per case instead of writing a table. Same coordinates in each, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]` sets `--st`; mark the changed parts `.is-st`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 14 units or more, cards at least 14.5rem wide.
 
 ## Small charts
 
 A number that does not measure a span in the drawing (see Dimensions) gets a small chart beside it. Each chart has `role="img"` and an `aria-label` with the values.
 
-- **Waffle** (rates, "N of 100"): 10×10 cells, two `<pattern>` fills over three rects.
-- **Bars** (2–5 values): value label just past each bar's end. The bar that matters is accent; the rest `--border-bright`. Bars grow in when their block enters.
+- **Waffle** (rates, "N of 100"): `<ve-waffle>` (`kit.md`).
+- **Bars** (2–5 values): `<ve-bars>`, with `hot` on the bar that matters. A share of a whole: `<ve-stack>`.
 - **Sparkline** (trend): `0 0 100 24`, one `polyline`, `vector-effect: non-scaling-stroke`.
 
 ## Entrance motion

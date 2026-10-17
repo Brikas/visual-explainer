@@ -75,7 +75,7 @@ const visualExplainerParameters = {
     action: {
       type: "string",
       enum: ["prepare", "render", "render_quick"],
-      description: "Choose prepare to plan, render to write complete HTML, or render_quick to validate a compact spec and render it locally.",
+      description: "Choose prepare to plan, render to render a page source to HTML, or render_quick to validate a compact spec and render it locally.",
     },
     topic: {
       type: "string",
@@ -104,7 +104,7 @@ const visualExplainerParameters = {
     },
     html: {
       type: "string",
-      description: "For action=render: complete self-contained HTML document to write.",
+      description: "For action=render, instead of path: a page source or a complete HTML document.",
     },
     path: {
       type: "string",
@@ -340,15 +340,15 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
         "Run a scout subagent to gather repo context and identify the visual structure.",
         "Synthesize the findings into a concise visual outline for the target audience.",
         "Read the relevant visual-explainer references or templates before generating the page.",
-        "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
+        "Write <name>.src.html in the output directory using the visual-explainer skill.",
+        "Call visual_explainer with action=render, path, optional open, and optional viewer.",
       ]
     : [
         "Gather the needed context directly in the main agent.",
         "Create a concise visual outline for the target audience.",
         "Read the relevant visual-explainer references or templates before generating the page.",
-        "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
+        "Write <name>.src.html in the output directory using the visual-explainer skill.",
+        "Call visual_explainer with action=render, path, optional open, and optional viewer.",
       ];
 
   const summaryLines = [
@@ -501,15 +501,15 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, write complete HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
-    promptSnippet: "Plan or render visual-explainer HTML. Use render for complete HTML and render_quick only for an explicit supported --quick prompt.",
+    description: "Plan visual explanations, render a page source to HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
+    promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source and render_quick only for an explicit supported --quick prompt.",
     promptGuidelines: [
       "After generating or reviewing a plan, architecture, diff, or substantial implementation, consider offering a visual explanation if it would clarify the work for the user.",
       "Because visual explanations can consume many tokens, ask before calling visual_explainer with action=prepare unless the user explicitly requested a diagram, visual review, recap, or visual plan.",
-      "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then synthesize complete HTML and finish with visual_explainer action=render.",
-      "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set). Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
+      "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then write the page source and finish with visual_explainer action=render.",
+      "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set) and pass path to action=render. Revise with small edits to that file and render again; never write the page again. Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
       "Use action=render_quick only when --quick is explicit on generate-web-diagram, diff-review, plan-review, or project-recap. Pass the compact schema spec. If it fails or does not fit, use the full HTML workflow and action=render.",
-      "For an implementation plan, pass the plan source (<ve-plan> tags, see the skill's references/plans.md) to action=render. It checks the plan against the session's cwd, writes the page, and keeps the source beside it as <name>.src.html.",
+      "Render an implementation plan source (<ve-plan> tags, see the skill's references/plans.md) the same way. It checks the plan against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",
