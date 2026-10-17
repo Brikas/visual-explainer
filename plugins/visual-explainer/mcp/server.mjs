@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -37,8 +37,9 @@ const prepareOutputSchema = z.object({
 });
 
 const renderInputSchema = z.object({
-  filename: z.string().min(1).describe("Basename filename. The server appends .html when no .html/.htm suffix is present."),
-  html: z.string().min(1).describe("Complete self-contained HTML document."),
+  filename: z.string().min(1).optional().describe("With html: basename filename. The server appends .html when no .html/.htm suffix is present."),
+  html: z.string().min(1).optional().describe("Complete self-contained HTML document."),
+  path: z.string().min(1).optional().describe("Instead of html: a <name>.src.html file in the output directory. Edit it and render again for revisions."),
   root: z.string().min(1).optional().describe("For a plan source (<ve-plan> tags): the repository its file citations are checked against. Defaults to the server's working directory."),
   open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
@@ -138,6 +139,18 @@ function assertOutputPathContained(resolvedDir, outputPath) {
   if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(dirPrefix)) {
     throw new Error(`${outputPath} must stay inside ${resolvedDir}`);
   }
+}
+
+// A source rendered by path is a <name>.src.html file inside the output directory, never a link out of it.
+function readSourcePath(input) {
+  const raw = input.trim();
+  if (!/\.src\.html?$/i.test(raw)) throw new Error("path must name a <name>.src.html file");
+  const outputDir = realpathSync(resolveOutputDirectory().path);
+  const requested = resolve(outputDir, raw);
+  if (lstatSync(requested, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${requested} must not be a symlink`);
+  const source = realpathSync(requested);
+  assertOutputPathContained(outputDir, source);
+  return { html: readFileSync(source, "utf8"), filename: basename(source).replace(/\.src(\.html?)$/i, "$1"), source };
 }
 
 function writeRenderedFile(outputPath, html) {
@@ -297,7 +310,7 @@ function prepareVisualExplanation(params) {
   return renderToolResult(message, structuredContent);
 }
 
-async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot) {
+async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoot, sourcePath) {
   assertHtmlDocument(htmlInput);
   // MCP cannot put the reader's response into the chat, so plan pages here always copy it instead (no sendBack).
   const page = renderPageForHost(htmlInput, { root: planRoot, filename: outputFilename(filenameInput) });
@@ -318,9 +331,9 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   if (outputStatus?.isSymbolicLink()) throw new Error(`${outputPath} must not be a symlink`);
 
   // Keep the source beside the page: revisions and build receipts are small edits to it, then a new render.
-  // The source goes first, so a failed write never leaves a new page beside an old source.
-  const source = page?.source ? join(outputDir, page.source) : undefined;
-  if (source) {
+  // The source goes first, so a failed write never leaves a new page beside an old source. A source read from path stays as it is.
+  const source = sourcePath ?? (page?.source ? join(outputDir, page.source) : undefined);
+  if (source && !sourcePath) {
     if (lstatSync(source, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${source} must not be a symlink`);
     writeRenderedFile(source, htmlInput);
   }
@@ -407,9 +420,15 @@ function registerTools(server) {
     inputSchema: renderInputSchema,
     outputSchema: renderOutputSchema,
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  }, async ({ filename, html, root, open, viewer }) => {
+  }, async ({ filename, html, path, root, open, viewer }) => {
     try {
-      const result = await writeRenderedHtml(filename, html, open, viewer, root ?? process.cwd());
+      if (html !== undefined && path !== undefined) throw new Error("pass html or path, not both");
+      if (path !== undefined && filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
+      if (path === undefined && (html === undefined || filename === undefined)) throw new Error("pass html with filename, or path");
+      const source = path === undefined ? undefined : readSourcePath(path);
+      const result = source
+        ? await writeRenderedHtml(source.filename, source.html, open, viewer, root ?? process.cwd(), source.source)
+        : await writeRenderedHtml(filename, html, open, viewer, root ?? process.cwd());
       return renderToolResult(result.message, result.output);
     } catch (error) {
       return renderToolError(error);

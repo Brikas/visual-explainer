@@ -1,8 +1,8 @@
-import { chmodSync, existsSync, lstatSync, mkdirSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
@@ -17,6 +17,7 @@ type VisualExplainerParams = {
   preferSubagent?: boolean;
   filename?: string;
   html?: string;
+  path?: string;
   spec?: unknown;
   open?: boolean;
   viewer?: Viewer;
@@ -96,11 +97,15 @@ const visualExplainerParameters = {
     },
     filename: {
       type: "string",
-      description: "For action=render: basename or slug for the output file. The tool appends .html if missing.",
+      description: "For action=render with html: basename or slug for the output file. The tool appends .html if missing.",
     },
     html: {
       type: "string",
       description: "For action=render: complete self-contained HTML document to write.",
+    },
+    path: {
+      type: "string",
+      description: "For action=render, instead of html: a <name>.src.html file in the output directory. Edit it and render again for revisions.",
     },
     spec: {
       type: "object",
@@ -157,6 +162,26 @@ function assertResolvesToItself(path: string) {
   while (!lstatSync(existing, { throwIfNoEntry: false }) && dirname(existing) !== existing) existing = dirname(existing);
   const resolved = join(realpathSync(existing), relative(existing, path));
   if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
+}
+
+function assertOutputPathContained(resolvedDir: string, outputPath: string) {
+  const resolvedPath = resolve(outputPath);
+  const dirPrefix = resolvedDir.endsWith(sep) ? resolvedDir : `${resolvedDir}${sep}`;
+  if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(dirPrefix)) {
+    throw new Error(`${outputPath} must stay inside ${resolvedDir}`);
+  }
+}
+
+// A source rendered by path is a <name>.src.html file inside the output directory, never a link out of it.
+function readSourcePath(input: string) {
+  const raw = input.trim();
+  if (!/\.src\.html?$/i.test(raw)) throw new Error("path must name a <name>.src.html file");
+  const outputDir = realpathSync(resolveOutputDirectory().path);
+  const requested = resolve(outputDir, raw);
+  if (lstatSync(requested, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${requested} must not be a symlink`);
+  const source = realpathSync(requested);
+  assertOutputPathContained(outputDir, source);
+  return { html: readFileSync(source, "utf8"), filename: basename(source).replace(/\.src(\.html?)$/i, "$1"), source };
 }
 
 function outputFilename(input: string) {
@@ -358,6 +383,7 @@ async function writeRenderedHtml(
   viewer: Viewer,
   signal?: AbortSignal,
   plan?: PlanHost,
+  sourcePath?: string,
 ): Promise<AgentToolResult<VisualExplainerDetails>> {
   signal?.throwIfAborted();
 
@@ -388,9 +414,9 @@ async function writeRenderedHtml(
 
   signal?.throwIfAborted();
   // Keep the source beside the page: revisions and build receipts are small edits to it, then a new render.
-  // The source goes first, so a failed write never leaves a new page beside an old source.
-  const source = page?.source ? join(outputDir, page.source) : undefined;
-  if (source) writeAtomically(source, htmlInput);
+  // The source goes first, so a failed write never leaves a new page beside an old source. A source read from path stays as it is.
+  const source = sourcePath ?? (page?.source ? join(outputDir, page.source) : undefined);
+  if (source && !sourcePath) writeAtomically(source, htmlInput);
   writeAtomically(outputPath, html);
 
   signal?.throwIfAborted();
@@ -426,17 +452,29 @@ async function writeRenderedHtml(
   };
 }
 
-function validateRenderOptions(params: VisualExplainerParams): asserts params is VisualExplainerParams & { filename: string } {
-  if (typeof params.filename !== "string") throw new Error(`filename must be a string for action=${params.action}`);
+function validateOpenOptions(params: VisualExplainerParams) {
   if (params.open !== undefined && typeof params.open !== "boolean") throw new Error("open must be a boolean when provided");
   if (params.viewer !== undefined && params.viewer !== "browser" && params.viewer !== "glimpse" && params.viewer !== "auto") {
     throw new Error("viewer must be browser, glimpse, or auto when provided");
   }
 }
 
+function validateRenderOptions(params: VisualExplainerParams): asserts params is VisualExplainerParams & { filename: string } {
+  if (typeof params.filename !== "string") throw new Error(`filename must be a string for action=${params.action}`);
+  validateOpenOptions(params);
+}
+
 async function renderVisualExplanation(params: VisualExplainerParams, plan: PlanHost, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+  if (params.path !== undefined) {
+    if (typeof params.path !== "string") throw new Error("path must be a string");
+    if (params.html !== undefined) throw new Error("pass html or path, not both");
+    if (params.filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
+    validateOpenOptions(params);
+    const source = readSourcePath(params.path);
+    return await writeRenderedHtml("render", source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
+  }
   validateRenderOptions(params);
-  if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
+  if (typeof params.html !== "string") throw new Error("html or path is required for action=render");
   return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
 }
 
