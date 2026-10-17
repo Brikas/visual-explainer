@@ -11,7 +11,7 @@ Choose a register from the content, then let the subject tint it (Topic motif). 
 | **Paper** | concepts, how-it-works, fact-checks, long reading | Serif headings. Narrow text column, wide figures. Margin notes at ≥ 1200px. `Fig. N` labels. |
 | **Editorial** | recaps, narratives, decks, showcases | Display type at full scale. Asymmetric grid with large empty areas. One number or phrase per screen carries the page. |
 
-The project's own design system overrides the register; a named palette → `themes.md`. Each register's fonts and tokens, in both schemes, are in `kit/kit.css`: a kit page gets them from `data-register`, and a slide or video deck copies its register's block from there. `--border-bright` (3:1) carries meaningful outlines, `--border` only decorative rules.
+The project's own design system overrides the register; a named palette → `themes.md`. A kit page gets each register's fonts and tokens from `data-register` (names in `kit.md`); only a slide or video deck copies its register's block from `kit/kit.css`. `--border-bright` (3:1) carries meaningful outlines, `--border` only decorative rules.
 
 ## Visual principles
 

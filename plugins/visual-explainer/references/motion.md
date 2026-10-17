@@ -11,7 +11,7 @@ Each step brings its parts forward with a one-line caption. With Play and a scru
   .ve-player → ol.ve-cap > li[data-n="1/5"] · button[data-go=-1] · button[data-play] · input[type=range] · button[data-go=1]
 ```
 
-It opens on the complete picture. One claim per scene; something visibly changes at every step. Never autoplay.
+Steps = the number of `li`; `data-s` counts from 1. It opens on the last step, the complete picture; Play replays from step 1. One claim per scene; something visibly changes at every step. Never autoplay.
 
 ## Replay: states and events
 

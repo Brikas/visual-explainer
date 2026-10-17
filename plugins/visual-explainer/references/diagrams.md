@@ -17,7 +17,7 @@ y:210                  ┌──▼───┐
                        └──────┘
 ```
 
-- Sketch in ASCII first, then turn columns and rows into coordinates. A viewBox width of 720–1000 keeps `14` units ≈ 14px.
+- Sketch in ASCII first, then turn columns and rows into coordinates. A viewBox 720–800 wide keeps `14`-unit labels at 12 px or more on a phone (the SVG is at least 700 px wide); a wider one needs a bigger `.ve-svg` `min-width`.
 - At least 40 units between boxes. Orthogonal edges (`M x y H x V y`). Labels 9 units above their line.
 - SVG text does not wrap: lines of about 18 characters, `<tspan x=".." dy="1.2em">` for a second line.
 - A boundary (process, network, trust zone) is a dashed rect with a mono label in its top-left corner.
