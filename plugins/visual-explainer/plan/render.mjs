@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { addClass, esc, find, hasClass, inner, kids, parseHtml, rawText, serialize, textOf, words } from "../kit/html.mjs";
+import { expandFlow, ifAttrs } from "../kit/flow.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -376,63 +377,19 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   };
   const expandRevision = (n) => `<section class="revision" aria-label="What changed"><p class="ve-label caps">Version ${esc(n.attrs.v || "2")} · changed since your answers</p><ul>${inner(n).trim()}</ul></section>`;
 
-  /* a diagram from boxes on a grid and arrows between them; the layout is computed here, so no coordinates are written by hand */
-  const W = 140, H = 64, GX = 84, GY = 56, PAD = 16; // three columns come out near the 560×340 hero
-  const ifAttrs = (k, cls = "") => `${k.attrs["data-if"] ? ` data-if="${esc(k.attrs["data-if"])}"` : ""}${cls || k.ifOff ? ` class="${cls}${k.ifOff ? `${cls ? " " : ""}is-if-off` : ""}"` : ""}`;
-  const flags = (k, base) => [base, ...["key", "new", "gone", "hot", "async"].filter((f) => f in k.attrs).map((f) => `is-${f}`)].join(" ");
+  /* <ve-flow>, laid out by kit/flow.mjs; a box or arrow links to its claims, and each claim gets one numbered callout, on the first box that names it */
   const refOf = (k) => {
     const nos = (k.attrs.claim || "").split(/\s+/).filter(Boolean);
     for (const no of nos) if (!claimNos.has(no)) errors.push(`${where(k)}: claim="${no}", but there is no claim ${no}`);
     return nos.length ? ` data-ref="${nos.map((no) => `claim-${esc(no)}`).join(" ")}"` : "";
   };
-  function expandFlow(n) {
-    const boxes = new Map(), edges = [];
-    for (const k of kids(n)) {
-      if (k.name === "ve-node") {
-        const m = (k.attrs.at || "").match(/^(\d+(?:\.5)?)[\s,]+(\d+(?:\.5)?)$/);
-        if (!k.attrs.id || !m) errors.push(`${where(k)}: needs id="name" and at="column row", for example at="2 1"`);
-        else if (boxes.has(k.attrs.id)) errors.push(`${where(k)}: id="${k.attrs.id}" is used twice`);
-        else boxes.set(k.attrs.id, { k, x: PAD + (m[1] - 1) * (W + GX), y: PAD + (m[2] - 1) * (H + GY) });
-      } else if (k.name === "ve-edge") edges.push(k);
-      else errors.push(`${where(k)}: only <ve-node> and <ve-edge> belong in <ve-flow>`);
-    }
-    for (const e of edges) for (const end of ["from", "to"]) if (!boxes.has(e.attrs[end])) errors.push(`${where(e)}: ${end}="${e.attrs[end] ?? ""}" names no <ve-node>`);
-    if (!n.attrs.label) warnings.push(`${where(n)}: add label="…", one sentence a screen reader can read instead of the picture`);
-    if (!boxes.size) { errors.push(`${where(n)}: needs at least one <ve-node>`); return ""; }
-    const pairs = new Set(edges.map((e) => `${e.attrs.from}>${e.attrs.to}`));
-    const edgeSvg = edges.filter((e) => boxes.has(e.attrs.from) && boxes.has(e.attrs.to) && e.attrs.from !== e.attrs.to).map((e) => {
-      const a = boxes.get(e.attrs.from), b = boxes.get(e.attrs.to);
-      // two arrows between the same boxes run side by side instead of on top of each other
-      const off = pairs.has(`${e.attrs.to}>${e.attrs.from}`) ? (e.attrs.from < e.attrs.to ? -12 : 12) : 0;
-      const [ax, ay, bx, by] = [a.x + W / 2, a.y + H / 2, b.x + W / 2, b.y + H / 2];
-      const x1 = bx > ax ? a.x + W : a.x, y2 = by > ay ? b.y : b.y + H;
-      let d, mx, my, vertical = false;
-      if (ay === by) { const x2 = bx > ax ? b.x : b.x + W; d = `M${x1} ${ay + off}H${x2}`; mx = (x1 + x2) / 2; my = ay + off; }
-      else if (ax === bx) { const y1 = by > ay ? a.y + H : a.y; d = `M${ax + off} ${y1}V${y2}`; mx = ax + off; my = (y1 + y2) / 2; vertical = true; }
-      else { d = `M${x1} ${ay + off}H${bx + off}V${y2}`; mx = (x1 + bx) / 2; my = ay + off; } // out of the side, then into the top or bottom
-      const ref = refOf(e);
-      const label = e.attrs.label ? `<text class="ve-el${vertical ? " r" : ""}"${ref} x="${vertical ? mx + 8 : mx}" y="${vertical ? my + 5 : off > 0 ? my + 17 : my - 9}">${esc(e.attrs.label)}</text>` : "";
-      return `<g${ifAttrs(e)}><path class="${flags(e, "ve-e")}"${ref} d="${d}"/>${label}${"gone" in e.attrs ? `<text class="ve-x" x="${mx}" y="${my}">✕</text>` : ""}</g>`;
-    });
+  const flow = (n) => {
     const called = new Set();
-    const nodeSvg = [], callouts = [];
-    for (const { k, x, y } of boxes.values()) {
-      const db = k.attrs.shape === "db", subs = kids(k).filter((s) => s.name === "small");
-      if (k.attrs.sub) subs.unshift({ attrs: {}, children: [{ text: esc(k.attrs.sub) }] });
-      const title = k.children.filter((c) => c.name !== "small").map(textOf).join("").trim();
-      const ty = (subs.length ? 25 : 32) + (db ? 6 : 0);
-      const shape = db ? `<path class="sh" d="M0 8V56A${W / 2} 8 0 0 0 ${W} 56V8"/><ellipse class="sh lid" cx="${W / 2}" cy="8" rx="${W / 2}" ry="8"/>` : `<rect class="sh" width="${W}" height="${H}" rx="6"/>`;
-      // <small data-if="…"> lets one box show a different line under each answer
-      const subSvg = subs.map((s) => `<text${ifAttrs(s, hasClass(s, "is-if-off") ? "sub is-if-off" : "sub")} x="${W / 2}" y="${ty + 21}">${esc(textOf(s).trim())}</text>`).join("");
-      nodeSvg.push(`<g${ifAttrs(k, flags(k, "ve-n"))}${refOf(k)} transform="translate(${x} ${y})">${shape}<text x="${W / 2}" y="${ty}">${esc(title)}</text>${subSvg}</g>`);
-      // each claim gets one numbered callout, on the first box that names it
-      const fresh = (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no));
-      // the callout shows and hides with its box
-      fresh.forEach((no, i) => { called.add(no); callouts.push(`<g${ifAttrs(k, "ve-co")} data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`); });
-    }
-    const width = Math.max(...[...boxes.values()].map((b) => b.x)) + W + PAD, height = Math.max(...[...boxes.values()].map((b) => b.y)) + H + PAD;
-    return `<div class="frame"><svg class="ve-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(n.attrs.label || "")}">${edgeSvg.join("")}${nodeSvg.join("")}${callouts.join("")}</svg></div>`;
-  }
+    // the callout shows and hides with its box
+    const callout = (k, x, y) => (k.attrs.claim || "").split(/\s+/).filter((no) => claimNos.has(no) && !called.has(no))
+      .map((no, i) => { called.add(no); return `<g${ifAttrs(k, "ve-co")} data-ref="claim-${esc(no)}" transform="translate(${x + i * 26} ${y})"><circle r="11"/><text>${esc(no)}</text></g>`; }).join("");
+    return expandFlow(n, { errors, warnings, where, ref: refOf, callout });
+  };
 
   const CHIP = { built: ["ok", "Built"], changed: ["warn", "Changed"], dropped: ["risk", "Dropped"] };
   function expandClaim(c) {
@@ -460,7 +417,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     return `<details class="claim" id="${esc(id)}"${data}><summary${c.no ? ` data-ref="claim-${esc(c.no)}"` : ""}><span class="c-no">${esc(num)}</span><span class="c-text">${claimHtml}</span><span class="c-meta">${chips}</span></summary><div class="c-body">${atLine}${own.map(serialize).join("")}${guess}${checkLine}${statusLine}${sub.map(serialize).join("")}</div></details>`;
   }
 
-  const EXPAND = { "ve-code": expandCode, "ve-calls": expandCalls, "ve-mock": expandMock, "ve-flow": expandFlow, "ve-ask": expandAsk, "ve-files": expandFiles, "ve-quote": expandQuote, "ve-why": expandWhy, "ve-revision": expandRevision, "ve-claim": expandClaim };
+  const EXPAND = { "ve-code": expandCode, "ve-calls": expandCalls, "ve-mock": expandMock, "ve-flow": flow, "ve-ask": expandAsk, "ve-files": expandFiles, "ve-quote": expandQuote, "ve-why": expandWhy, "ve-revision": expandRevision, "ve-claim": expandClaim };
   const PARTS = ["ve-plan", "ve-pin", "ve-opt", "ve-node", "ve-edge"];
 
   /* answers shown or hidden by data-if start in the state the defaults give. This runs before expansion,
