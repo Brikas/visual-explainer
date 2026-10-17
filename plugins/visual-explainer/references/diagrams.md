@@ -77,7 +77,7 @@ One drawing in the same coordinates with a toggle (`button[aria-pressed]` flips 
 
 ## Small multiples
 
-The same small diagram once per case, in the same coordinates, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]`; mark it `.is-st`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 14 units or more.
+The same small diagram once per case, in the same coordinates, so the eye sees only the difference. The part that changes takes the case's status color (`.case[data-st]`; mark a kit edge or node `.is-st`, and give your own shapes `var(--st)`). Each card: status chip, short title, mini diagram, no sentence. Mini labels 14 units or more.
 
 ## Small charts
 
