@@ -9,7 +9,7 @@
 - Plans you answer in the page. `/generate-visual-plan` draws the change, lets you pick options and mark the agent's guesses, and sends back one response. After the build, the same page shows what was built.
 - Narrated videos. `/generate-video` turns an explainer into a 1080p MP4 with voice-over, or records a walkthrough of a live web app.
 - Animated state machines. An explainer about a job queue, a workflow, or anything else with states can replay it one event at a time: the route each event takes lights up, a dot travels along it, queues fill and drain, and each step's caption says why it happened. Inspired by the animated state-machine diagrams in [hapsland](https://github.com/dearlordylord/hapsland) by Igor Loskutov ([@dearlordylord](https://github.com/dearlordylord)).
-- Cheaper pages. An agent now writes about a third as much for a page and reads less than half the guidance, so pages come back faster and revisions are small edits.
+- About 60% fewer tokens. An agent reads about 60% less guidance for a diagram and writes about 60% less per page, the always-on tool descriptions in Pi and MCP are shorter, and revisions are small edits instead of rewrites.
 
 ### Added
 - `/generate-video` makes a narrated MP4. The agent writes a video deck whose scenes carry their narration, and `visual-explainer-video` records it at 1080p on a virtual clock, so motion never stutters and each picture appears with its sentence. Narration comes from ElevenLabs, Seed Audio, OpenAI, or xAI when a key is set; without one, the video is silent with captions. `--stills` saves one picture per scene to check first. The same command can record a walkthrough of a live web app. It needs ffmpeg and `playwright-core`, which you install separately so everyone else's install stays small.
@@ -21,7 +21,7 @@
 - Diagrams carry their numbers and notes on the drawing. A wait, a size, or a time window is drawn as a dimension line on the span it measures. Numbered callouts match the steps of a step-through. A finding that lives in one small part, such as file permission bits, gets a close-up of that part.
 - A step-through can replay a state machine one event at a time. The whole machine stays drawn while each event lights the route it took and dots run along it. Queues fill and drain, worker slots fill and free up, and counts change in place. Each caption says why the event happened and cites the code behind it. `examples/replay-job-queue.html` shows all of it.
 - `<ve-bars>`, `<ve-waffle>`, and `<ve-stack>` turn a few numbers into a chart, with units on every label and one scale across charts that share a `max`. `<ve-flow>` works on any page too. Hand-drawn diagrams stay the default.
-- Pages are written as a short source, `<name>.src.html`, with one kit line in its head; the renderer adds the shared styles, fonts, diagram parts, and script. The reference page takes 3,982 tokens to write instead of 10,911, and renders the same. Pi `render` and MCP `visual_explainer_render_html` take the source as `path`; elsewhere, run `node kit/render.mjs <name>.src.html`.
+- Pages are written as a short source, `<name>.src.html`, with one kit line in its head; the renderer adds the shared styles, fonts, diagram parts, and script. The reference page takes 64% fewer tokens to write, and renders the same. Pi `render` and MCP `visual_explainer_render_html` take the source as `path`; elsewhere, run `node kit/render.mjs <name>.src.html`.
 - Revisions, including `/fact-check` corrections, are small edits to the kept source and a new render; the agent never writes the whole page again.
 - One kit carries all four looks. `data-register` on `<html>` picks Instrument, Blueprint, Paper, or Editorial, with its fonts and light and dark colors.
 - Every render reports its figures, uncaptioned figures, tags, and prose words in one line, and a mistake in a tag stops the render and names its line. `node kit/check.mjs page.html` opens the page in Chrome at phone and desktop widths and reports script errors, sideways scrolling, and labels under 12 px.
@@ -30,7 +30,7 @@
 ### Changed
 - `/plan-review` writes its review as a plan page: each finding comes with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.
 - `/diff-review` asks about each risk worth fixing, so your reply comes back as the list of fixes to make. On someone else's PR it drafts review comments and never posts them. `/project-recap` ends by asking where to start. Both chart sizes and churn with the new data tags.
-- The skill an agent reads for a diagram fell from about 23k tokens to 9k, and the always-on tool descriptions in Pi and MCP are about 540 tokens shorter.
+- The guidance an agent reads for a diagram is about 60% shorter, and the always-on tool descriptions in Pi and MCP are shorter too.
 - A page opened in a Pi Glimpse window now closes when the session ends, as plan windows do.
 - A printed page uses its own look's colors on white, not the default amber.
 
