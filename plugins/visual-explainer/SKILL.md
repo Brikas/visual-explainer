@@ -18,7 +18,7 @@ Turn what you know into something a person understands in ten seconds. The defau
 - Render to `<name>.html`. Pi: `visual_explainer` `prepare` → `render` with `path:"<name>.src.html"` (ask before `prepare` unless a visual was requested). MCP: `visual_explainer_render_html` with `path` (no file access: `html` + `filename`). Elsewhere: `node <this skill's directory>/kit/render.mjs <name>.src.html --open`. Nothing is written until every `✗` is fixed. `viewer:"glimpse"` only on request.
 - Revise with small edits to the `.src.html` and render again. Never write the whole page again.
 - If `playwright-core` is installed, run `node <this skill's directory>/kit/check.mjs <name>.html` and fix what it reports.
-- Never read the kit's CSS, JS, or `.mjs` source; the references and render errors cover what a page needs.
+- Never read the kit's CSS, JS, or `.mjs` source for a page; the references and render errors cover what a page needs. Only a standalone slide or video deck copies the one block its reference names from `kit/kit.css`.
 - A terminal table of 4+ rows or 3+ columns becomes a page and a one-line reply.
 - A Markdown companion (`<name>.md`) only when the user asks for AI-readable output; ask before overwriting one.
 - Implementation plans: `references/plans.md`.
