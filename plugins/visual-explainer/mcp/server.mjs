@@ -3,13 +3,13 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { prepareRenderedHtml, renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
+import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -144,18 +144,6 @@ function assertOutputPathContained(resolvedDir, outputPath) {
   if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(dirPrefix)) {
     throw new Error(`${outputPath} must stay inside ${resolvedDir}`);
   }
-}
-
-// A source rendered by path is a <name>.src.html file inside the output directory, never a link out of it.
-function readSourcePath(input) {
-  const raw = input.trim();
-  if (!/\.src\.html?$/i.test(raw)) throw new Error("path must name a <name>.src.html file");
-  const outputDir = realpathSync(resolveOutputDirectory().path);
-  const requested = resolve(outputDir, raw);
-  if (lstatSync(requested, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${requested} must not be a symlink`);
-  const source = realpathSync(requested);
-  assertOutputPathContained(outputDir, source);
-  return { html: readFileSync(source, "utf8"), filename: basename(source).replace(/\.src(\.html?)$/i, "$1"), source };
 }
 
 function writeRenderedFile(outputPath, html) {
@@ -410,10 +398,8 @@ function registerTools(server) {
       if (html !== undefined && path !== undefined) throw new Error("pass html or path, not both");
       if (path !== undefined && filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
       if (path === undefined && (html === undefined || filename === undefined)) throw new Error("pass html with filename, or path");
-      const source = path === undefined ? undefined : readSourcePath(path);
-      const result = source
-        ? await writeRenderedHtml(source.filename, source.html, open, viewer, root ?? process.cwd(), source.source)
-        : await writeRenderedHtml(filename, html, open, viewer, root ?? process.cwd());
+      const source = path === undefined ? undefined : readSourcePath(path, () => resolveOutputDirectory().path);
+      const result = await writeRenderedHtml(source?.filename ?? filename, source?.html ?? html, open, viewer, root ?? process.cwd(), source?.source);
       return renderToolResult(result.message, result.output);
     } catch (error) {
       return renderToolError(error);

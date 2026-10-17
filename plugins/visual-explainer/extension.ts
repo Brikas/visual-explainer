@@ -1,12 +1,12 @@
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
-import { prepareRenderedHtml, renderPageForHost, reportLine, reportPage } from "./kit/render.mjs";
+import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "./kit/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -165,26 +165,6 @@ function assertResolvesToItself(path: string) {
   while (!lstatSync(existing, { throwIfNoEntry: false }) && dirname(existing) !== existing) existing = dirname(existing);
   const resolved = join(realpathSync(existing), relative(existing, path));
   if (resolved !== path) throw new Error(`${path} must not contain symlinks and must resolve to itself (it resolves to ${resolved})`);
-}
-
-function assertOutputPathContained(resolvedDir: string, outputPath: string) {
-  const resolvedPath = resolve(outputPath);
-  const dirPrefix = resolvedDir.endsWith(sep) ? resolvedDir : `${resolvedDir}${sep}`;
-  if (resolvedPath !== resolvedDir && !resolvedPath.startsWith(dirPrefix)) {
-    throw new Error(`${outputPath} must stay inside ${resolvedDir}`);
-  }
-}
-
-// A source rendered by path is a <name>.src.html file inside the output directory, never a link out of it.
-function readSourcePath(input: string) {
-  const raw = input.trim();
-  if (!/\.src\.html?$/i.test(raw)) throw new Error("path must name a <name>.src.html file");
-  const outputDir = realpathSync(resolveOutputDirectory().path);
-  const requested = resolve(outputDir, raw);
-  if (lstatSync(requested, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${requested} must not be a symlink`);
-  const source = realpathSync(requested);
-  assertOutputPathContained(outputDir, source);
-  return { html: readFileSync(source, "utf8"), filename: basename(source).replace(/\.src(\.html?)$/i, "$1"), source };
 }
 
 function outputFilename(input: string) {
@@ -453,7 +433,7 @@ async function renderVisualExplanation(params: VisualExplainerParams, plan: Plan
     if (params.html !== undefined) throw new Error("pass html or path, not both");
     if (params.filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
     validateOpenOptions(params);
-    const source = readSourcePath(params.path);
+    const source = readSourcePath(params.path, () => resolveOutputDirectory().path);
     return await writeRenderedHtml("render", source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
   }
   validateRenderOptions(params);

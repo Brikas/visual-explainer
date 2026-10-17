@@ -2,9 +2,9 @@
 // Turns a page source into one self-contained page. A page that links the kit (<link rel="stylesheet" data-ve-kit>)
 // gets the kit's CSS, fonts, SVG defs, and script inlined at that marker; a plan source goes to plan/render.mjs.
 // Only the marker elements change, so a rendered page renders to itself. No dependencies, so it runs from a copied skill folder.
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { lstatSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { esc, find, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
 import { expandFlow } from "./flow.mjs";
@@ -13,7 +13,7 @@ import { hasPlan, renderPlan, renderPlanForHost } from "../plan/render.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Each register's families, at the weights the kit uses (references/style-guide.md, Registers).
+// Each register's families, at the weights the kit uses.
 const FONTS = {
   instrument: "family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600",
   blueprint: "family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600",
@@ -21,9 +21,7 @@ const FONTS = {
   editorial: "family=Instrument+Serif&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600",
 };
 
-const isKitLink = (n) => n.name === "link" && "data-ve-kit" in n.attrs;
-
-/** What a reader meets: figures, figures without a caption, expanded tags and flows, and prose words outside figures. */
+/** Figures, figures without a caption, expanded tags and flows, and prose words outside figures. */
 function count(doc, tags) {
   const r = { figures: 0, uncaptioned: 0, dataTags: tags.filter((t) => t.name !== "ve-flow").length, flows: tags.filter((t) => t.name === "ve-flow").length, proseWords: 0 };
   // a <p> inside an <li> is counted once, with its <li>
@@ -39,20 +37,16 @@ function count(doc, tags) {
   return r;
 }
 
-/** The report for an ordinary page, which renders as given. */
 export const reportPage = (html) => count(parseHtml(html), []);
 
-const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures`;
 
-/**
- * Inlines the kit at its marker and expands the data tags and <ve-flow>. `kit` is false for a page with neither,
- * which is returned unchanged.
- */
+/** Inlines the kit at its marker and expands the data tags and <ve-flow>. A page with neither returns unchanged, with `kit: false`. */
 export function renderPage(source) {
   const errors = [], warnings = [];
   const doc = parseHtml(source);
-  const links = find(doc, isKitLink);
+  const links = find(doc, (n) => n.name === "link" && "data-ve-kit" in n.attrs);
   const tags = find(doc, (n) => Object.hasOwn(TAGS, n.name) || n.name === "ve-flow");
   if (!links.length && !tags.length) return { html: source, kit: false, errors, warnings, report: count(doc, tags) };
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
@@ -73,11 +67,9 @@ export function renderPage(source) {
 
   const css = readFileSync(join(here, "kit.css"), "utf8");
   const script = `<script data-ve-kit>\n${readFileSync(join(here, "kit.js"), "utf8").replace(/<\/script/gi, "<\\/script")}</script>`;
-  // a page that leaves out the charset garbles · and — in Firefox and Safari; one without the viewport renders zoomed out on phones
-  const metas = find(doc, (n) => n.name === "meta");
-  const charset = metas.some((n) => "charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? "")) ? "" : '<meta charset="utf-8">\n';
-  const viewport = metas.some((n) => n.attrs.name === "viewport") ? "" : '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-  links[0].html = `${charset}${viewport}<link rel="preconnect" href="https://fonts.googleapis.com">
+  // without a charset, Firefox and Safari garble · and — (prepareRenderedHtml adds the viewport)
+  const charset = find(doc, (n) => n.name === "meta" && ("charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? ""))).length ? "" : '<meta charset="utf-8">\n';
+  links[0].html = `${charset}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?${esc(FONTS[register])}&amp;display=swap" rel="stylesheet">
 <style data-ve-kit>
@@ -92,28 +84,32 @@ ${css}</style>`;
   return { html: serialize(doc), kit: true, errors, warnings, report: count(doc, tags) };
 }
 
-const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
-
-function ensureFavicon(html) {
-  if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
-  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
-  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
-  return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
-}
-
-function ensureDocumentMetadata(html) {
-  let output = html;
-  if (!/<html\b[^>]*\blang\s*=/i.test(output)) output = output.replace(/<html\b/i, '<html lang="en"');
-  if (!/<head[^>]*>/i.test(output)) output = output.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head></head>`);
-  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(output)) {
-    output = output.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
-  }
-  return output;
-}
+const favicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
 
 /** The last step before a page is written (both hosts, every page; the CLI, kit pages): a favicon, `lang`, a `<head>`, and the viewport, each only when missing. */
 export function prepareRenderedHtml(html) {
-  return ensureDocumentMetadata(ensureFavicon(html));
+  let out = html;
+  if (!/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(out)) {
+    if (/<\/title>/i.test(out)) out = out.replace(/<\/title>/i, `</title>\n${favicon}`);
+    else if (/<head[^>]*>/i.test(out)) out = out.replace(/<head[^>]*>/i, (head) => `${head}\n${favicon}`);
+    else out = out.replace(/<html[^>]*>/i, (tag) => `${tag}\n<head>\n${favicon}\n</head>`);
+  }
+  if (!/<html\b[^>]*\blang\s*=/i.test(out)) out = out.replace(/<html\b/i, '<html lang="en"');
+  if (!/<head[^>]*>/i.test(out)) out = out.replace(/<html[^>]*>/i, (tag) => `${tag}\n<head></head>`);
+  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(out)) out = out.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
+  return out;
+}
+
+/** `path` in both hosts: a <name>.src.html file inside the output directory (`dir()`), never a link out of it. */
+export function readSourcePath(input, dir) {
+  const raw = input.trim();
+  if (!/\.src\.html?$/i.test(raw)) throw new Error("path must name a <name>.src.html file");
+  const outputDir = realpathSync(dir());
+  const requested = resolve(outputDir, raw);
+  if (lstatSync(requested, { throwIfNoEntry: false })?.isSymbolicLink()) throw new Error(`${requested} must not be a symlink`);
+  const source = realpathSync(requested);
+  if (source !== outputDir && !source.startsWith(outputDir.endsWith(sep) ? outputDir : `${outputDir}${sep}`)) throw new Error(`${source} must stay inside ${outputDir}`);
+  return { html: readFileSync(source, "utf8"), filename: basename(source).replace(/\.src(\.html?)$/i, "$1"), source };
 }
 
 /**
@@ -164,7 +160,7 @@ function main() {
   const report = result.report ? `\n  ${reportLine(result.report)}` : "";
   if (flag("--lint")) { console.log(`✓ ${summary}${report}`); return; }
   const temp = `${output}.${process.pid}.tmp`;
-  // the CLI writes a plan and an ordinary page as given; a kit page gets what the hosts would add
+  // a plan and an ordinary page are written as given; a kit page gets what the hosts add
   writeFileSync(temp, result.kit ? prepareRenderedHtml(result.html) : result.html);
   renameSync(temp, output);
   console.log(`✓ ${resolve(output)}  ${summary}${result.warnings.length ? ` · ${result.warnings.length} warning(s)` : ""}${report}`);
