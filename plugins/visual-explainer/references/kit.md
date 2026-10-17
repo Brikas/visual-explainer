@@ -80,3 +80,5 @@ A tag becomes the SVG it describes. Put `<ve-bars>` and `<ve-waffle>` in a `.kpi
 ```
 
 Flags: `key`, `hot`, `async`, `new`, `gone`. `data-s` and `data-ref` work as on drawn parts; each arrow with `data-s` gets a replay token. Arrow labels about 12 characters at most. Render errors name their line: `line 42 <ve-bar>: value="-3" is negative`.
+
+`<ve-ask id="ttl" q="Key lifetime?"><ve-opt value="60">60 s</ve-opt><ve-opt value="300">5 min</ve-opt></ve-ask>` asks the reader to choose; the answer joins their reply. `default` and `multi` are optional.

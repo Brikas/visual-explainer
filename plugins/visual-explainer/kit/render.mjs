@@ -8,6 +8,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { esc, find, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
 import { expandFlow } from "./flow.mjs";
+import { expandAsk } from "./ask.mjs";
 import { TAGS } from "./tags.mjs";
 import { hasPlan, renderPlan, renderPlanForHost } from "../plan/render.mjs";
 
@@ -43,15 +44,16 @@ const plural = (n, one) => `${n} ${n === 1 ? one : `${one}s`}`;
 export const reportLine = (r) => `Page: ${plural(r.figures, "figure")}${r.uncaptioned ? ` (${r.uncaptioned} without a caption)` : ""}${r.dataTags ? ` · ${plural(r.dataTags, "data tag")}` : ""}${r.flows ? ` · ${plural(r.flows, "flow")}` : ""} · ${plural(r.proseWords, "prose word")} outside figures`;
 
 /**
- * Inlines the kit at its marker and expands the data tags and <ve-flow>. A page with neither returns unchanged, with `kit: false`.
+ * Inlines the kit at its marker and expands the data tags, <ve-flow>, and <ve-ask>. A page with none returns unchanged, with `kit: false`.
  * `sendBack` marks a page Pi opens in Glimpse, so the reader's reply goes to the agent instead of being copied.
  */
 export function renderPage(source, { sendBack = false } = {}) {
   const errors = [], warnings = [];
   const doc = parseHtml(source);
   const links = find(doc, (n) => n.name === "link" && "data-ve-kit" in n.attrs);
-  const tags = find(doc, (n) => Object.hasOwn(TAGS, n.name) || n.name === "ve-flow");
-  if (!links.length && !tags.length) return { html: source, kit: false, errors, warnings, report: count(doc, tags) };
+  const tags = find(doc, (n) => Object.hasOwn(TAGS, n.name) || n.name === "ve-flow" || n.name === "ve-ask");
+  const asks = tags.filter((t) => t.name === "ve-ask"), charts = tags.filter((t) => t.name !== "ve-ask");
+  if (!links.length && !tags.length) return { html: source, kit: false, errors, warnings, report: count(doc, charts) };
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
   if (!links.length) errors.push(`${where(tags[0])}: tags need the kit; add <link rel="stylesheet" href="kit.css" data-ve-kit> to <head>`);
@@ -65,11 +67,17 @@ export function renderPage(source, { sendBack = false } = {}) {
     if ("claim" in k.attrs) errors.push(`${where(k)}: claim= belongs to plan pages; link a part to its terms with data-ref`);
     return ["data-ref", "data-s"].filter((a) => k.attrs[a] !== undefined).map((a) => ` ${a}="${esc(k.attrs[a])}"`).join("");
   };
-  for (const t of tags) t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
+  for (const n of find(doc, (x) => "data-if" in x.attrs)) errors.push(`${where(n)}: data-if belongs to plan pages`);
+  const ids = new Map();
+  for (const t of tags) {
+    if (t.name === "ve-ask") t.html = expandAsk(t, { errors, warnings, where, ids, k: asks.indexOf(t) + 1, total: asks.length, page: true });
+    else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
+  }
   if (errors.length) return { html: source, kit: true, errors, warnings };
 
-  const css = readFileSync(join(here, "kit.css"), "utf8");
-  const js = ["reply.js", "kit.js"].map((f) => readFileSync(join(here, f), "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
+  // a page with <ve-ask> also gets its styles and its part of the reply
+  const css = ["kit.css", ...(asks.length ? ["ask.css"] : [])].map((f) => readFileSync(join(here, f), "utf8")).join("");
+  const js = ["reply.js", ...(asks.length ? ["ask.js"] : []), "kit.js"].map((f) => readFileSync(join(here, f), "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
   const script = `<script data-ve-kit${sendBack ? " data-send-back" : ""}>\n${js}</script>`;
   // without a charset, Firefox and Safari garble · and — (prepareRenderedHtml adds the viewport)
   const charset = find(doc, (n) => n.name === "meta" && ("charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? ""))).length ? "" : '<meta charset="utf-8">\n';
@@ -89,7 +97,7 @@ ${css}</style>`;
     scripts[0].html = script;
     for (const s of scripts.slice(1)) s.html = "";
   } else body.children.push({ html: `${script}\n` });
-  return { html: serialize(doc), kit: true, errors, warnings, report: count(doc, tags) };
+  return { html: serialize(doc), kit: true, errors, warnings, report: count(doc, charts) };
 }
 
 const favicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';

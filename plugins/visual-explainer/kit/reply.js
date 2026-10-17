@@ -122,6 +122,9 @@ div.ve-sel { display: flex; gap: var(--s-1); padding: 0; box-shadow: none; } div
   }
 
   /* a kit page: comments and questions on words or figure parts, collected into one reply */
+  // parts: more a reader answers, as { count(), lines(), rows(), clear() } (kit/ask.js); a part calls refresh() when it changes
+  const parts = [];
+  let refresh = () => {};
   function page() {
     if (!$("main")) return;
     const KEY = `ve-page:${location.pathname}`;
@@ -150,15 +153,17 @@ div.ve-sel { display: flex; gap: var(--s-1); padding: 0; box-shadow: none; } div
       const [first, ...rest] = n.text.split("\n");
       return [`- ${n.part ? `${n.where} › ${n.part}` : `"${n.quote}" (${n.where})`} — ${n.kind}: ${first}`, ...rest.map((l) => `  ${l}`)].join("\n");
     };
-    const markdown = () => `Reply on "${title}" (${file})\n${notes.map(line).join("\n")}\n`;
+    const markdown = () => `Reply on "${title}" (${file})\n${[...notes.map(line), ...parts.flatMap((p) => p.lines())].join("\n")}\n`;
+    const total = () => parts.reduce((s, p) => s + p.count(), notes.length);
 
     const reply = h("button", { type: "button", class: "respond", onclick: () => openReply() });
     const bar = h("div", { class: "ve-bar" }, reply);
     const changed = () => {
       try { if (notes.length) localStorage.setItem(KEY, JSON.stringify(notes)); else localStorage.removeItem(KEY); } catch { /* see above */ }
-      reply.textContent = `Reply (${notes.length})`;
-      if (!notes.length) bar.remove(); else if (!bar.isConnected) document.body.append(bar);
+      reply.textContent = `Reply (${total()})`;
+      if (!total()) bar.remove(); else if (!bar.isConnected) document.body.append(bar);
     };
+    refresh = changed;
     const add = (n) => { if (n.text) { notes.push(n); changed(); } };
 
     function openReply() {
@@ -170,12 +175,14 @@ div.ve-sel { display: flex; gap: var(--s-1); padding: 0; box-shadow: none; } div
           const ta = h("textarea", { "aria-label": "Edit note" }); ta.value = n.text;
           text.replaceChildren(ta); edit.textContent = "Save"; ta.focus();
         });
-        const remove = h("button", { type: "button", onclick: () => { notes = notes.filter((x) => x !== n); changed(); if (notes.length) openReply(); else close(); } }, "Remove");
+        const remove = h("button", { type: "button", onclick: () => { notes = notes.filter((x) => x !== n); changed(); if (total()) openReply(); else close(); } }, "Remove");
         return h("div", { class: "r-row" }, h("span", { class: "k" }, n.kind === "ask" ? "?" : "›"), text, h("span", { class: "acts" }, edit, remove));
       });
-      sheet({ title: "Your reply", copy: "Copy reply", body: h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, `Notes · ${notes.length}`), rows), md: h("pre", { class: "r-md" }, markdown()), send: async () => {
+      const notesSec = notes.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, `Notes · ${notes.length}`), rows) : null;
+      sheet({ title: "Your reply", copy: "Copy reply", body: [notesSec, ...parts.map((p) => p.rows())], md: h("pre", { class: "r-md" }, markdown()), send: async () => {
         await deliver({ kind: "page", markdown: markdown() });
-        notes = []; changed(); close();
+        notes = []; for (const p of parts) p.clear();
+        changed(); close();
       } });
     }
 
@@ -204,8 +211,8 @@ div.ve-sel { display: flex; gap: var(--s-1); padding: 0; box-shadow: none; } div
       document.body.append(askBtn);
       askBtn.focus({ preventScroll: true });
     });
-    if (notes.length) changed();
+    if (total()) changed();
   }
 
-  return { $, $$, h, toast, deliver, note, closePop, onSelect, sheet, close, isOpen, page };
+  return { $, $$, h, toast, deliver, note, closePop, onSelect, sheet, close, isOpen, page, parts, refresh: () => refresh() };
 })();
