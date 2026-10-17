@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Turns a plan source page (<ve-*> tags) into one static, self-contained HTML page.
-// It checks the plan's shape, reads cited code from disk, and inlines plan.css and plan.js.
+// It checks the plan's shape, reads cited code from disk, and inlines plan.css, kit/reply.js, and plan.js.
 // No dependencies, so it runs from a copied skill folder.
 import { readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
@@ -8,6 +8,7 @@ import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { addClass, esc, find, hasClass, inner, kids, parseHtml, rawText, serialize, textOf, words } from "../kit/html.mjs";
 import { expandFlow, ifAttrs } from "../kit/flow.mjs";
+import { expandAsk as askTag } from "../kit/ask.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -314,42 +315,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
     return `<figure class="mock">${n.attrs.label ? `<p class="mock-label">${esc(n.attrs.label)}</p>` : ""}<div class="mock-stage"><div class="mock-host" style="width:${w}px"><template shadowrootmode="open"><style>${MOCK_CSS}</style><div class="root">${content}</div></template></div></div>${list}</figure>`;
   }
 
-  function expandAsk(n) {
-    const at = where(n);
-    const id = n.attrs.id;
-    if (!id || !/^[\w-]+$/.test(id)) errors.push(`${at}: needs id="word" (letters, digits, - or _)`);
-    else if (askIds.has(id)) errors.push(`${at}: id="${id}" is already used at ${askIds.get(id)}`);
-    askIds.set(id, at);
-    const q = n.attrs.q || "";
-    if (!q) errors.push(`${at}: needs q="the question"`);
-    else if (words(q) > 15) warnings.push(`${at}: the question is ${words(q)} words; keep it to about 15`);
-    const multi = "multi" in n.attrs;
-    const opts = kids(n).filter((k) => k.name === "ve-opt");
-    if (opts.length < 2) errors.push(`${at}: needs at least two <ve-opt>`);
-    const defaults = opts.filter((o) => "default" in o.attrs);
-    if (!multi && defaults.length !== 1) errors.push(`${at}: mark exactly one <ve-opt default>, the option you would build`);
-    const values = new Set();
-    for (const o of opts) {
-      if (!o.attrs.value) errors.push(`${where(o)}: needs value=""`);
-      else if (values.has(o.attrs.value)) errors.push(`${where(o)}: value="${o.attrs.value}" is used twice`);
-      values.add(o.attrs.value);
-      for (const no of (o.attrs.removes || "").split(/\s+/).filter(Boolean)) if (!claimNos.has(no)) errors.push(`${where(o)}: removes="${no}", but there is no claim ${no}`);
-      if (o.attrs.note && words(o.attrs.note) > 12) warnings.push(`${where(o)}: note is ${words(o.attrs.note)} words; keep it to about 12`);
-    }
-    const row = opts.every((o) => textOf(o).trim().length <= 18 && !o.attrs.note && !o.attrs.removes);
-    const body = opts.map((o) => {
-      const cost = [];
-      for (const [k, sign, word] of [["new", "+", "new"], ["changed", "~", "changed"], ["deleted", "−", "deleted"]]) {
-        const v = +(o.attrs[k] || 0);
-        if (v) cost.push(`${v > 0 ? sign : "−"}${Math.abs(v)} ${word} file${Math.abs(v) === 1 ? "" : "s"}`);
-      }
-      for (const no of (o.attrs.removes || "").split(/\s+/).filter(Boolean)) cost.push(`<span class="goes">claim ${esc(no)} goes</span>`);
-      const data = ["new", "changed", "deleted", "removes"].filter((k) => o.attrs[k]).map((k) => ` data-${k}="${esc(o.attrs[k])}"`).join("");
-      const def = "default" in o.attrs;
-      return `<label class="opt"><input type="${multi ? "checkbox" : "radio"}" name="${esc(id)}" value="${esc(o.attrs.value ?? "")}"${def ? " checked" : ""}${data}><span class="opt-body"><span class="opt-label">${inner(o).trim()}</span>${def ? '<span class="sug">Suggested</span>' : ""}${o.attrs.note ? `<small>${esc(o.attrs.note)}</small>` : ""}${cost.length ? `<span class="opt-cost">${cost.join(" · ")}</span>` : ""}</span></label>`;
-    }).join("");
-    return `<fieldset class="ask${row ? " row" : ""}" id="ask-${esc(id)}" data-ask="${esc(id)}"><legend class="ask-n">Decision <b>${n.k}</b> of ${asks.length}</legend><p class="ask-q">${esc(q)}</p><div class="ask-opts">${body}</div></fieldset>`;
-  }
+  const expandAsk = (n) => askTag(n, { errors, warnings, where, ids: askIds, k: n.k, total: asks.length, claims: claimNos });
 
   function expandFiles(n) {
     const counts = { "+": 0, "~": 0, "-": 0 };
@@ -500,7 +466,7 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   const keepHead = head ? kids(head).filter((k) => !(k.name === "meta" && ("charset" in k.attrs || k.attrs.name === "viewport")) && k.name !== "title").map(serialize).join("\n") : "";
   const hasIcon = head && kids(head).some((k) => k.name === "link" && /icon/.test(k.attrs.rel || ""));
   const css = readFileSync(join(here, "plan.css"), "utf8");
-  const js = readFileSync(join(here, "plan.js"), "utf8").replace(/<\/script/gi, "<\\/script");
+  const js = [join(here, "../kit/reply.js"), join(here, "plan.js")].map((f) => readFileSync(f, "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
   const lang = htmlNode?.attrs.lang || "en";
   const bodyAttrs = body.openRaw.replace(/^<body/i, "").replace(/>$/, "");
   const html = `<!doctype html>

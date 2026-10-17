@@ -376,10 +376,11 @@ async function writeRenderedHtml(
 
   signal?.throwIfAborted();
 
-  const listener = page && !page.kit && plan ? {
+  // a plan page or a kit page can send the reader's reply back; an ordinary page has no script to send it
+  const listener = page && plan ? {
     onMessage: (data: unknown) => {
       const d = data as { type?: unknown; markdown?: unknown } | null;
-      if (d?.type === "visual-explainer:plan-response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
+      if (d?.type === "visual-explainer:response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
     },
     closed: plan.closed,
   } : undefined;
@@ -400,7 +401,9 @@ async function writeRenderedHtml(
   }
   if (page) message += page.note;
   if (report) message += `\n${reportLine(report)}`;
-  if (listener && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") message += " When the reader presses Send to agent, their response arrives here as a plan response message; wait for it.";
+  if (listener && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") {
+    message += page?.kit ? "\nThe reader may reply; it arrives here as a message." : " When the reader presses Send to agent, their response arrives here as a message; wait for it.";
+  }
 
   return {
     content: [{ type: "text" as const, text: message }],
@@ -443,8 +446,8 @@ async function renderQuickVisualExplanation(params: VisualExplainerParams, signa
 }
 
 export default function (pi: ExtensionAPI) {
-  // A Glimpse plan window can outlive this session, and pi throws on any call through a stale `pi`,
-  // so the session's end closes its plan windows before a late Send to agent can reach `pi`.
+  // A Glimpse window can outlive this session, and pi throws on any call through a stale `pi`,
+  // so the session's end closes its windows before a late Send to agent can reach `pi`.
   const session = new AbortController();
   pi.on("session_shutdown", () => session.abort());
 
@@ -471,7 +474,7 @@ export default function (pi: ExtensionAPI) {
       if (params.action === "render_quick") return await renderQuickVisualExplanation(params, signal);
       // a labeled message from the page rather than text the user typed; it starts a turn, or waits if the agent is busy
       const onResponse = (markdown: string, page: string) => pi.sendMessage(
-        { customType: "visual_explainer_plan_response", content: `The reader answered the plan at ${page}:\n\n${markdown}`, display: true, details: { page } },
+        { customType: "visual_explainer_response", content: `The reader replied on ${page}:\n\n${markdown}`, display: true, details: { page } },
         { triggerTurn: true, deliverAs: "followUp" },
       );
       return await renderVisualExplanation(params, { root: ctx.cwd, onResponse, closed: session.signal }, signal);
