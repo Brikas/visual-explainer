@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,7 +85,8 @@ const resourceFiles = [
   { name: "quick-readme", uri: "visual-explainer://quick/README.md", path: "quick/README.md", title: "Quick Mode README", mimeType: "text/markdown" },
   { name: "quick-schema", uri: "visual-explainer://quick/schema.json", path: "quick/schema.json", title: "Quick Mode JSON Schema", mimeType: "application/schema+json" },
   // every reference the skill points to, so a client with no file access can still read them
-  ...readdirSync(join(skillDir, "references")).filter((file) => file.endsWith(".md")).sort().map((file) => (
+  { name: "kit-css", uri: "visual-explainer://kit/kit.css", path: "kit/kit.css", title: "Kit stylesheet", mimeType: "text/css" },
+  ...(existsSync(join(skillDir, "references")) ? readdirSync(join(skillDir, "references")) : []).filter((file) => file.endsWith(".md")).sort().map((file) => (
     { name: `reference-${file.slice(0, -3)}`, uri: `visual-explainer://references/${file}`, path: `references/${file}`, title: `Reference: ${file}`, mimeType: "text/markdown" }
   )),
 ];

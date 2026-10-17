@@ -51,7 +51,7 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 
 ## Data tags
 
-A tag becomes the SVG it describes. Put it where the SVG goes: in a `.kpi`, a `.frame`, or a `<figure>`. `label` is the sentence a screen reader reads instead of the picture.
+A tag becomes the SVG it describes. Put `<ve-bars>` and `<ve-waffle>` in a `.kpi` or a `<figure>`, and `<ve-stack>` in a `.frame`, which scrolls it on a narrow screen. `label` is the sentence a screen reader reads instead of the picture.
 
 ```html
 <ve-bars unit="ms" max="9" label="A hit takes 1 ms; a miss takes 9 ms"><ve-bar value="1" hot>hit</ve-bar><ve-bar value="9">miss</ve-bar></ve-bars>

@@ -90,7 +90,7 @@ The tree sits beside the sticky hero; hovering a claim lights its parts. Draw th
 - Marks: `+` new, `-` removed, `~` changed, `?` optional (dashed). `**bold**` in a call is a new symbol. Call lines indent 2 spaces per level after the mark column.
 - `<ve-mock>` holds real markup in a shadow root at width `w` (≤ 480). Ready classes: `ui hd row ft btn btn.pri muted small ok bad`; add a `<style>` inside for more. `data-pin="N"` puts badge N on an element.
 - `data-if="retention=90"` (also `!=`, joined with `&&`) on any element, flow part, SVG part, or mock markup shows it only under that answer, so the hero and mocks redraw when an option changes the design.
-- Code or call text that holds `<` goes in `<script type="text/plain">`.
+- Code or call text that holds `<` goes in `<script type="text/plain">`. File names link to VS Code; `VISUAL_EXPLAINER_EDITOR` picks `cursor`, `zed`, `windsurf`, or `none`.
 
 ## Decisions
 
