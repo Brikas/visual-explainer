@@ -47,7 +47,9 @@ function bars(n, ctx) {
     const y = 12 + i * 28, w = max ? Math.round((r.value / max) * span * 100) / 100 : 0;
     return `<text y="${y}">${esc(r.name)}</text><rect${r.hot ? ' class="hot"' : ""} x="${labelW}" y="${y - 7}" width="${w}" height="14" rx="2"/><text x="${labelW + w + 8}" y="${y}">${esc(withUnit(r.raw, unit))}</text>`;
   }).join("");
-  return `<svg class="ve-bars" viewBox="0 0 ${width} ${rows.length * 28 - 4}" role="img" aria-label="${esc(n.attrs.label || "")}">${svg}</svg>`;
+  // a widened chart may grow past the 16rem cap in step, so its labels keep their size
+  const cap = width > 240 ? ` style="max-width:${Math.round((width / 240) * 1600) / 100}rem"` : "";
+  return `<svg class="ve-bars"${cap} viewBox="0 0 ${width} ${rows.length * 28 - 4}" role="img" aria-label="${esc(n.attrs.label || "")}">${svg}</svg>`;
 }
 
 function waffle(n, { errors, warnings, where }) {
