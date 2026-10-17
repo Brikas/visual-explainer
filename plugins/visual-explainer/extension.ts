@@ -6,7 +6,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { renderQuickSpec } from "./quick/render.mjs";
-import { renderPlanForHost } from "./plan/render.mjs";
+import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "./kit/render.mjs";
 
 type VisualExplainerParams = {
   action: "prepare" | "render" | "render_quick";
@@ -17,6 +17,7 @@ type VisualExplainerParams = {
   preferSubagent?: boolean;
   filename?: string;
   html?: string;
+  path?: string;
   spec?: unknown;
   open?: boolean;
   viewer?: Viewer;
@@ -60,8 +61,11 @@ type RenderDetails = OpenResult & {
   action: "render" | "render_quick";
   path: string;
   viewer: Viewer;
-  planSource?: string;
+  source?: string;
+  report?: PageReport;
 };
+
+type PageReport = { figures: number; uncaptioned: number; dataTags: number; flows: number; proseWords: number };
 
 type VisualExplainerDetails = PrepareDetails | RenderDetails;
 
@@ -71,7 +75,7 @@ const visualExplainerParameters = {
     action: {
       type: "string",
       enum: ["prepare", "render", "render_quick"],
-      description: "Choose prepare to plan, render to write complete HTML, or render_quick to validate a compact spec and render it locally.",
+      description: "Choose prepare to plan, render to render a page source to HTML, or render_quick to validate a compact spec and render it locally.",
     },
     topic: {
       type: "string",
@@ -96,11 +100,15 @@ const visualExplainerParameters = {
     },
     filename: {
       type: "string",
-      description: "For action=render: basename or slug for the output file. The tool appends .html if missing.",
+      description: "For action=render with html: basename for the output file; .html is appended if missing.",
     },
     html: {
       type: "string",
-      description: "For action=render: complete self-contained HTML document to write.",
+      description: "For action=render, instead of path: a page source or a complete HTML document.",
+    },
+    path: {
+      type: "string",
+      description: "For action=render, instead of html: a <name>.src.html file in the output directory.",
     },
     spec: {
       type: "object",
@@ -109,12 +117,12 @@ const visualExplainerParameters = {
     },
     open: {
       type: "boolean",
-      description: "For action=render or render_quick: open the written HTML file in the selected viewer. Defaults to true.",
+      description: "For action=render or render_quick: open the written file. Defaults to true.",
     },
     viewer: {
       type: "string",
       enum: ["browser", "glimpse", "auto"],
-      description: "For action=render or render_quick: choose browser, glimpse, or auto. Auto tries glimpseui first, then falls back to the browser. Defaults to browser.",
+      description: "For action=render or render_quick: browser (default), glimpse, or auto (glimpseui, else the browser)."
     },
   },
   required: ["action"],
@@ -178,29 +186,6 @@ function assertHtmlDocument(html: string) {
   if (!/^<html[\s>]/i.test(start) || !/<\/html>\s*$/i.test(trimmed)) {
     throw new Error("html must be a complete HTML document starting with <!doctype html> or <html> and ending with </html>");
   }
-}
-
-const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
-
-function ensureFavicon(html: string) {
-  if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
-  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
-  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
-  return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
-}
-
-function ensureDocumentMetadata(html: string) {
-  let output = html;
-  if (!/<html\b[^>]*\blang\s*=/i.test(output)) output = output.replace(/<html\b/i, '<html lang="en"');
-  if (!/<head[^>]*>/i.test(output)) output = output.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head></head>`);
-  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(output)) {
-    output = output.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
-  }
-  return output;
-}
-
-function prepareRenderedHtml(html: string) {
-  return ensureDocumentMetadata(ensureFavicon(html));
 }
 
 type WindowListener = { onMessage: (data: unknown) => void; closed: AbortSignal };
@@ -307,21 +292,14 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
   const subagentPrompt = shouldUseSubagent
     ? `Scout the codebase for a visual explanation about ${topic}.${goal ? ` The user goal is: ${goal}.` : ""}${files.length ? ` Start with these files/paths: ${files.join(", ")}.` : ""} Return concise findings, important entities/flows, and visual structure recommendations. Do not edit files.`
     : undefined;
-  const recommendedFlow = shouldUseSubagent
-    ? [
-        "Run a scout subagent to gather repo context and identify the visual structure.",
-        "Synthesize the findings into a concise visual outline for the target audience.",
-        "Read the relevant visual-explainer references or templates before generating the page.",
-        "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
-      ]
-    : [
-        "Gather the needed context directly in the main agent.",
-        "Create a concise visual outline for the target audience.",
-        "Read the relevant visual-explainer references or templates before generating the page.",
-        "Generate a complete self-contained HTML document using the visual-explainer skill.",
-        "Choose a basename filename and call visual_explainer with action=render, filename, html, optional open, and optional viewer.",
-      ];
+  const recommendedFlow = [
+    ...(shouldUseSubagent
+      ? ["Run a scout subagent to gather repo context and identify the visual structure.", "Synthesize the findings into a concise visual outline for the target audience."]
+      : ["Gather the needed context directly in the main agent.", "Create a concise visual outline for the target audience."]),
+    "Read the relevant visual-explainer references or templates before generating the page.",
+    "Write <name>.src.html in the output directory using the visual-explainer skill.",
+    "Call visual_explainer with action=render, path, optional open, and optional viewer.",
+  ];
 
   const summaryLines = [
     `Prepared visual explanation for: ${topic}`,
@@ -358,15 +336,18 @@ async function writeRenderedHtml(
   viewer: Viewer,
   signal?: AbortSignal,
   plan?: PlanHost,
+  sourcePath?: string,
 ): Promise<AgentToolResult<VisualExplainerDetails>> {
   signal?.throwIfAborted();
 
   assertHtmlDocument(htmlInput);
   // Only a page Pi opens in Glimpse itself can send the reader's response back into this chat.
   const sendBack = open !== false && viewer !== "browser";
-  const page = plan ? renderPlanForHost(htmlInput, { root: plan.root, filename: outputFilename(filenameInput), sendBack }) : null;
+  const page = plan ? renderPageForHost(htmlInput, { root: plan.root, filename: outputFilename(filenameInput), sendBack }) : null;
+  // a plan page has its own summary in its note; every other page gets the report
+  const report: PageReport | undefined = page ? page.report : reportPage(htmlInput);
   const filename = page?.filename ?? outputFilename(filenameInput);
-  const html = page ? page.html : prepareRenderedHtml(htmlInput);
+  const html = prepareRenderedHtml(page ? page.html : htmlInput);
   const { path: outputDir, configured } = resolveOutputDirectory();
   const outputPath = join(outputDir, filename);
   if (existsSync(outputDir) && lstatSync(outputDir).isSymbolicLink()) throw new Error(`${outputDir} must not be a symlink`);
@@ -387,15 +368,15 @@ async function writeRenderedHtml(
   };
 
   signal?.throwIfAborted();
-  // Keep the plan source beside the page: revisions and build receipts are small edits to it, then a new render.
-  // The source goes first, so a failed write never leaves a new page beside an old source.
-  const planSource = page?.source ? join(outputDir, page.source) : undefined;
-  if (planSource) writeAtomically(planSource, htmlInput);
+  // Keep the source beside the page: revisions and build receipts are small edits to it, then a new render.
+  // The source goes first, so a failed write never leaves a new page beside an old source. A source read from path stays as it is.
+  const source = sourcePath ?? (page?.source ? join(outputDir, page.source) : undefined);
+  if (source && !sourcePath) writeAtomically(source, htmlInput);
   writeAtomically(outputPath, html);
 
   signal?.throwIfAborted();
 
-  const listener = page && plan ? {
+  const listener = page && !page.kit && plan ? {
     onMessage: (data: unknown) => {
       const d = data as { type?: unknown; markdown?: unknown } | null;
       if (d?.type === "visual-explainer:plan-response" && typeof d.markdown === "string") plan.onResponse(d.markdown, outputPath);
@@ -418,25 +399,38 @@ async function writeRenderedHtml(
     message += ` Glimpse fallback reason: ${openResult.fallbackError ?? "unknown error"}.`;
   }
   if (page) message += page.note;
+  if (report) message += `\n${reportLine(report)}`;
   if (listener && openResult.openTarget === "glimpse" && openResult.openStatus === "dispatched") message += " When the reader presses Send to agent, their response arrives here as a plan response message; wait for it.";
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action, path: outputPath, viewer, ...openResult, ...(planSource ? { planSource } : {}) },
+    details: { action, path: outputPath, viewer, ...openResult, ...(source ? { source } : {}), ...(report ? { report } : {}) },
   };
 }
 
-function validateRenderOptions(params: VisualExplainerParams): asserts params is VisualExplainerParams & { filename: string } {
-  if (typeof params.filename !== "string") throw new Error(`filename must be a string for action=${params.action}`);
+function validateOpenOptions(params: VisualExplainerParams) {
   if (params.open !== undefined && typeof params.open !== "boolean") throw new Error("open must be a boolean when provided");
   if (params.viewer !== undefined && params.viewer !== "browser" && params.viewer !== "glimpse" && params.viewer !== "auto") {
     throw new Error("viewer must be browser, glimpse, or auto when provided");
   }
 }
 
+function validateRenderOptions(params: VisualExplainerParams): asserts params is VisualExplainerParams & { filename: string } {
+  if (typeof params.filename !== "string") throw new Error(`filename must be a string for action=${params.action}`);
+  validateOpenOptions(params);
+}
+
 async function renderVisualExplanation(params: VisualExplainerParams, plan: PlanHost, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
+  if (params.path !== undefined) {
+    if (typeof params.path !== "string") throw new Error("path must be a string");
+    if (params.html !== undefined) throw new Error("pass html or path, not both");
+    if (params.filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
+    validateOpenOptions(params);
+    const source = readSourcePath(params.path, () => resolveOutputDirectory().path);
+    return await writeRenderedHtml("render", source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
+  }
   validateRenderOptions(params);
-  if (typeof params.html !== "string") throw new Error("html must be a string for action=render");
+  if (typeof params.html !== "string") throw new Error("html or path is required for action=render");
   return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
 }
 
@@ -457,15 +451,14 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, write complete HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
-    promptSnippet: "Plan or render visual-explainer HTML. Use render for complete HTML and render_quick only for an explicit supported --quick prompt.",
+    description: "Plan visual explanations, render a page source to HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
+    promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source and render_quick only for an explicit supported --quick prompt.",
     promptGuidelines: [
-      "After generating or reviewing a plan, architecture, diff, or substantial implementation, consider offering a visual explanation if it would clarify the work for the user.",
-      "Because visual explanations can consume many tokens, ask before calling visual_explainer with action=prepare unless the user explicitly requested a diagram, visual review, recap, or visual plan.",
-      "If visual_explainer action=prepare recommends subagent scouting and the subagent tool is available, gather context first, then synthesize complete HTML and finish with visual_explainer action=render.",
-      "Use visual_explainer action=render only after generating a complete visual-explainer HTML document; pass a basename-style filename because it writes under ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set). Use viewer=glimpse only when the user wants a native Glimpse window and glimpseui is installed; viewer=auto may fall back to the browser.",
-      "Use action=render_quick only when --quick is explicit on generate-web-diagram, diff-review, plan-review, or project-recap. Pass the compact schema spec. If it fails or does not fit, use the full HTML workflow and action=render.",
-      "For an implementation plan, pass the plan source (<ve-plan> tags, see the skill's references/plans.md) to action=render. It checks the plan against the session's cwd, writes the page, and keeps the source beside it as <name>.src.html.",
+      "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
+      "Visuals cost many tokens: ask before visual_explainer action=prepare unless the user asked for a diagram, visual review, recap, or visual plan. If prepare recommends a scout subagent and one is available, gather context first.",
+      "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR) and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
+      "action=render_quick only for an explicit --quick on generate-web-diagram, diff-review, plan-review, or project-recap; if it fails or does not fit, render the full page.",
+      "A plan source (<ve-plan> tags, references/plans.md) renders the same way, checked against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",
