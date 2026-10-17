@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,7 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { renderQuickSpec } from "../quick/render.mjs";
-import { renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
+import { prepareRenderedHtml, renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -84,6 +84,10 @@ const resourceFiles = [
   { name: "skill", uri: "visual-explainer://skill/SKILL.md", path: "SKILL.md", title: "Visual Explainer Skill", mimeType: "text/markdown" },
   { name: "quick-readme", uri: "visual-explainer://quick/README.md", path: "quick/README.md", title: "Quick Mode README", mimeType: "text/markdown" },
   { name: "quick-schema", uri: "visual-explainer://quick/schema.json", path: "quick/schema.json", title: "Quick Mode JSON Schema", mimeType: "application/schema+json" },
+  // every reference the skill points to, so a client with no file access can still read them
+  ...readdirSync(join(skillDir, "references")).filter((file) => file.endsWith(".md")).sort().map((file) => (
+    { name: `reference-${file.slice(0, -3)}`, uri: `visual-explainer://references/${file}`, path: `references/${file}`, title: `Reference: ${file}`, mimeType: "text/markdown" }
+  )),
 ];
 
 function readSkillFile(relativePath) {
@@ -174,29 +178,6 @@ function assertHtmlDocument(html) {
   if (!/^<html[\s>]/i.test(start) || !/<\/html>\s*$/i.test(trimmed)) {
     throw new Error("html must be a complete HTML document starting with <!doctype html> or <html> and ending with </html>");
   }
-}
-
-const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
-
-function ensureFavicon(html) {
-  if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
-  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
-  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
-  return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
-}
-
-function ensureDocumentMetadata(html) {
-  let output = html;
-  if (!/<html\b[^>]*\blang\s*=/i.test(output)) output = output.replace(/<html\b/i, '<html lang="en"');
-  if (!/<head[^>]*>/i.test(output)) output = output.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head></head>`);
-  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(output)) {
-    output = output.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
-  }
-  return output;
-}
-
-function prepareRenderedHtml(html) {
-  return ensureDocumentMetadata(ensureFavicon(html));
 }
 
 function runOpener(command, args, openTarget) {

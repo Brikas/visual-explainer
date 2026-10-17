@@ -8,7 +8,6 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
 <!doctype html>
 <html lang="en" data-register="blueprint">
 <head>
-<meta charset="utf-8">
 <title>94% of reads never touch the database</title>
 <link rel="stylesheet" href="kit.css" data-ve-kit>
 <style>/* only this page's CSS: topic motif, bespoke figure classes */</style>
@@ -33,7 +32,7 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
 </html>
 ```
 
-The renderer adds the register's fonts, the viewport, the kit CSS and script, and the SVG defs: the `#ve-ah` arrowhead, the `#ve-node` fill, and the `#ve-w-on` / `#ve-w-off` waffle cells.
+The renderer adds the charset, viewport, favicon, the register's fonts, the kit CSS and script, and the SVG defs: the `#ve-ah` arrowhead, the `#ve-node` fill, and the `#ve-w-on` / `#ve-w-off` waffle cells.
 
 **Registers:** `data-register="instrument"` (the default), `blueprint`, `paper`, or `editorial`. Pick one with `style-guide.md`. Use the tokens as `var(--accent)`, `var(--s-4)`, and so on. A page's own `:root { --accent: … }` always wins over the kit.
 

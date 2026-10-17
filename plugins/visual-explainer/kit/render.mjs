@@ -73,9 +73,11 @@ export function renderPage(source) {
 
   const css = readFileSync(join(here, "kit.css"), "utf8");
   const script = `<script data-ve-kit>\n${readFileSync(join(here, "kit.js"), "utf8").replace(/<\/script/gi, "<\\/script")}</script>`;
-  // a page that leaves out the viewport would render zoomed out on phones, whichever host or CLI renders it
-  const viewport = find(doc, (n) => n.name === "meta" && n.attrs.name === "viewport").length ? "" : '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-  links[0].html = `${viewport}<link rel="preconnect" href="https://fonts.googleapis.com">
+  // a page that leaves out the charset garbles · and — in Firefox and Safari; one without the viewport renders zoomed out on phones
+  const metas = find(doc, (n) => n.name === "meta");
+  const charset = metas.some((n) => "charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? "")) ? "" : '<meta charset="utf-8">\n';
+  const viewport = metas.some((n) => n.attrs.name === "viewport") ? "" : '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+  links[0].html = `${charset}${viewport}<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?${esc(FONTS[register])}&amp;display=swap" rel="stylesheet">
 <style data-ve-kit>
@@ -88,6 +90,30 @@ ${css}</style>`;
     for (const s of scripts.slice(1)) s.html = "";
   } else body.children.push({ html: `${script}\n` });
   return { html: serialize(doc), kit: true, errors, warnings, report: count(doc, tags) };
+}
+
+const standardFavicon = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'14\' fill=\'%230f172a\'/%3E%3Cpath d=\'M18 40V24l14-8 14 8v16l-14 8-14-8Z\' fill=\'none\' stroke=\'%23fbbf24\' stroke-width=\'4\' stroke-linejoin=\'round\'/%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'5\' fill=\'%2338bdf8\'/%3E%3C/svg%3E">';
+
+function ensureFavicon(html) {
+  if (/<link\b[^>]*\brel=["'][^"']*(?:icon|shortcut icon)[^"']*["'][^>]*>/i.test(html)) return html;
+  if (/<\/title>/i.test(html)) return html.replace(/<\/title>/i, `</title>\n${standardFavicon}`);
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => `${head}\n${standardFavicon}`);
+  return html.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head>\n${standardFavicon}\n</head>`);
+}
+
+function ensureDocumentMetadata(html) {
+  let output = html;
+  if (!/<html\b[^>]*\blang\s*=/i.test(output)) output = output.replace(/<html\b/i, '<html lang="en"');
+  if (!/<head[^>]*>/i.test(output)) output = output.replace(/<html[^>]*>/i, (htmlTag) => `${htmlTag}\n<head></head>`);
+  if (!/<meta\b[^>]*\bname\s*=\s*["']viewport["'][^>]*>/i.test(output)) {
+    output = output.replace(/<head[^>]*>/i, (head) => `${head}\n<meta name="viewport" content="width=device-width, initial-scale=1.0">`);
+  }
+  return output;
+}
+
+/** The last step before a page is written (both hosts, every page; the CLI, kit pages): a favicon, `lang`, a `<head>`, and the viewport, each only when missing. */
+export function prepareRenderedHtml(html) {
+  return ensureDocumentMetadata(ensureFavicon(html));
 }
 
 /**
@@ -138,7 +164,8 @@ function main() {
   const report = result.report ? `\n  ${reportLine(result.report)}` : "";
   if (flag("--lint")) { console.log(`✓ ${summary}${report}`); return; }
   const temp = `${output}.${process.pid}.tmp`;
-  writeFileSync(temp, result.html);
+  // the CLI writes a plan and an ordinary page as given; a kit page gets what the hosts would add
+  writeFileSync(temp, result.kit ? prepareRenderedHtml(result.html) : result.html);
   renameSync(temp, output);
   console.log(`✓ ${resolve(output)}  ${summary}${result.warnings.length ? ` · ${result.warnings.length} warning(s)` : ""}${report}`);
   if (flag("--open")) openFile(resolve(output));

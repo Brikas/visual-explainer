@@ -14,6 +14,7 @@
 - One kit carries all four looks. A page picks Instrument, Blueprint, Paper, or Editorial with `data-register` on `<html>`, gets that look's fonts and light and dark colors, and its own colors still win.
 - Charts from numbers: `<ve-bars>`, `<ve-waffle>`, and `<ve-stack>` turn a few values into the drawing, with the units on every label and one scale across charts that share a `max`. `<ve-flow>`, the boxes-and-arrows tag from plans, now works on any page, including in a step-through with linked highlighting and a moving dot on each stepped arrow. A mistake stops the render and names its line. Hand-drawn diagrams stay the default.
 - Every render reports its figures, figures without a caption, tags, and prose words in one line. `node kit/check.mjs page.html` opens the page in Chrome at phone and desktop widths and reports script errors, sideways scrolling, and diagram labels under 12 px.
+- The MCP server also serves the skill's reference files (`references/*.md`) as resources, so a client that cannot read files can still follow them.
 
 ### Changed
 - `/plan-review` writes its review as a plan page: each finding is a claim with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.

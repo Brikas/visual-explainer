@@ -122,7 +122,7 @@ Example checkout configuration:
 }
 ```
 
-The server exposes three tools: `visual_explainer_prepare`, `visual_explainer_render_html`, and `visual_explainer_render_quick`. Render tools default to `open: false`; set `open: true` only when you want the server to request a browser or Glimpse window. It also exposes the bundled command templates as MCP prompts and the canonical `SKILL.md`, command markdown, quick README, and quick schema as read-only resources.
+The server exposes three tools: `visual_explainer_prepare`, `visual_explainer_render_html`, and `visual_explainer_render_quick`. Render tools default to `open: false`; set `open: true` only when you want the server to request a browser or Glimpse window. It also exposes the bundled command templates as MCP prompts and the canonical `SKILL.md`, its `references/*.md`, command markdown, quick README, and quick schema as read-only resources.
 
 **Antigravity CLI:**
 
