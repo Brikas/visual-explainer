@@ -499,9 +499,10 @@ plugins/
     ├── pptx/              ← best-effort static PPTX exporter
     ├── video/             ← MP4 renderer for video decks
     ├── references/        ← read on demand
-    │   ├── style-guide.md (four registers, scale rules, components, polish pass)
+    │   ├── style-guide.md (four registers, layout, figure rules, topic motif, your own CSS)
     │   ├── kit.md         (kit marker, parts, data tags, <ve-flow>)
-    │   ├── diagrams.md    (hand-drawn SVG kit, linked highlighting, stepper/scene player)
+    │   ├── diagrams.md    (hand-drawn SVG kit, dimensions, callouts, linked highlighting)
+    │   ├── motion.md      (stepper, scene player, replay, live figures, three.js)
     │   ├── slides.md      (deck budget, engine contract, delivery check)
     │   ├── video.md       (video deck contract, script and look rules, voice clips, tutorials)
     │   └── themes.md      (11 palettes + runtime theme/font picker)

@@ -1,6 +1,6 @@
 # The kit
 
-The kit is the shared CSS, fonts, SVG defs, and script of every page. You write one marker line; the renderer puts the kit in its place. This sheet lists what it gives you; `diagrams.md` gives the drawing rules.
+The kit is the shared CSS, fonts, SVG defs, and script of every page. You write one marker line; the renderer puts the kit in its place. This sheet lists what it gives you; `diagrams.md` gives the drawing rules and `motion.md` the steppers, replays, and live figures.
 
 ## The source
 
@@ -40,14 +40,14 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 
 | Part | Markup |
 |---|---|
-| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
-| Edge | `<path class="ve-e [is-hot\|is-async]"/>` + `<text class="ve-el [l\|r]">verb</text>`; draw edges before nodes |
+| Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `y`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
+| Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>`; draw edges before nodes |
 | Flags | `.is-new`, `.is-gone` on `.ve-n` or `.ve-e`; `<text class="ve-x">✕</text>` marks a blocked edge |
 | KPI strip | `.kpis` › `.kpi`: `<span class="ve-label">Hit rate</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>` + a data tag; `data-count` counts up |
 | Small multiples | `.cases` › `<div class="case" data-st="ok\|warn\|risk">`: a chip, `<h3>`, `<svg class="ve-mini" viewBox="0 0 240 128">`; changed parts `.is-st`, a missing part `.is-off` |
 | Chips | `<span class="chip ok\|warn\|risk">word</span>` |
 | Linked highlighting | `data-ref="redis"` on any part; a prose term is `<span class="ve-ref" data-ref="redis" tabindex="0">` (`diagrams.md`) |
-| Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals`; `.ve-co`; `.ve-dim`; `data-flow`: markup in `diagrams.md` |
+| Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals` (`motion.md`); `.ve-co`, `.ve-dim`, `data-flow` (`diagrams.md`) |
 
 ## Data tags
 
@@ -59,7 +59,7 @@ A tag becomes the SVG it describes. Put `<ve-bars>` and `<ve-waffle>` in a `.kpi
 <ve-stack unit="k" label="Postgres serves 6k of 100k reads"><ve-bar value="94">Redis</ve-bar><ve-bar value="6" hot>Postgres</ve-bar></ve-stack>
 ```
 
-- **Bars:** rows in the order written, from zero, each value with its unit; `hot` marks the bar that matters. Charts with the same `max` share one scale, with labels of up to 9 characters and values of up to 6.
+- **Bars:** rows in the order written, from zero, each value with its unit; `hot` marks the bar that matters. Charts with the same `max` share one scale, with labels of up to 9 characters and values (with unit) of up to 6; longer is a render error.
 - **Waffle:** `value` is a whole number from 0 to 100; `note` names the off cells.
 - **Stack:** one bar split in proportion; a narrow segment's label drops a row.
 
