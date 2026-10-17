@@ -24,7 +24,7 @@ if (asks.length) {
     // a click, Space, or Enter on the option already selected is an answer too, though no change fires;
     // where a change does follow, it records the final value
     a.addEventListener("click", (e) => { if (e.target.matches("input")) record(a); });
-    a.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("input")) record(a); });
+    a.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("input:checked")) record(a); });
   }
   const state = (a) => (answered(a) ? pick(a) : [read(a) ?? []].flat().length ? `${pick(a)} (default)` : "no answer");
   R.parts.push({
