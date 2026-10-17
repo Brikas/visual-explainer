@@ -36,7 +36,7 @@ Step through a state machine one event at a time: the route each event took ligh
 |---|---|---|
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
-| MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes render tools, prompt templates, and read-only skill resources without starting an HTTP server |
+| MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes prepare and render tools, prompt templates, and read-only skill resources without starting an HTTP server |
 | PPTX export | Best-effort static utility | `visual-explainer-pptx` converts simple HTML slide decks to `.pptx`; HTML remains the source of truth |
 | Video export | Local renderer (needs ffmpeg, Chrome, and `playwright-core`, installed separately) | `/generate-video` writes a video deck and `visual-explainer-video` records it to a 1080p MP4, frame by frame, narrated when a speech API key is set and captioned otherwise |
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
@@ -510,7 +510,7 @@ plugins/
         └── slide-deck.html (slide engine + reference deck)
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tools default to `open: false`.
+**Output:** `~/.agent/diagrams/filename.html` → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
 
 Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when you ask for it. Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 

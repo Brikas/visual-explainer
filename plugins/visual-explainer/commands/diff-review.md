@@ -18,7 +18,7 @@ Typical sections; merge, reorder, drop, or add as the content needs:
 | Behavior | before/after of the same SVG, edges added or removed highlighted; a changed state machine or queue replays one event per step (`references/diagrams.md`) |
 | Risks | severity-chip table: correctness, tests, API, security, performance |
 | Coupling | small SVG of what depends on the changed code |
-| Fixes | each risk worth acting on: `<ve-ask id="r1" q="Fix the unchecked null in parse()?">` (the risk in a few words) with `<ve-opt value="fix" default note="the fix in one line">Fix</ve-opt>` and `<ve-opt value="leave">Leave as is</ve-opt>` |
+| Fixes | each risk worth acting on: `<ve-ask id="r1" q="Fix the unchecked null in parse()?">` (then `r2`, …; the risk in a few words) with `<ve-opt value="fix" default note="the fix in one line">Fix</ve-opt>` and `<ve-opt value="leave">Leave as is</ve-opt>` |
 
 Colors: red = removed or before · green = added or after · amber = risk · blue = context. Deliver with the skill's rules and hand over in one line.
 
