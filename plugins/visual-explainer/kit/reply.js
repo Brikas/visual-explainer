@@ -175,19 +175,22 @@ div.ve-sel { display: flex; gap: var(--s-1); padding: 0; box-shadow: none; } div
     const add = (n) => { if (n.text) { notes.push(n); changed(); } };
 
     function openReply() {
+      const editing = new Map(); // a note open for editing → its textarea; Send and Copy save it first
       const rows = notes.map((n) => {
         const text = h("span", {}, n.text, h("small", {}, `${n.kind} · ${n.part ? `${n.where} › ${n.part}` : `“${n.quote}” · ${n.where}`}`));
         const edit = h("button", { type: "button" }, "Edit");
         edit.addEventListener("click", () => {
-          if (edit.textContent === "Save") { const t = text.firstChild.value.trim(); if (t) n.text = t; changed(); openReply(); return; }
+          if (edit.textContent === "Save") { const t = text.firstChild.value.trim(); if (t) n.text = t; editing.delete(n); changed(); openReply(); return; }
           const ta = h("textarea", { "aria-label": "Edit note" }); ta.value = n.text;
-          text.replaceChildren(ta); edit.textContent = "Save"; ta.focus();
+          text.replaceChildren(ta); edit.textContent = "Save"; editing.set(n, ta); ta.focus();
         });
         const remove = h("button", { type: "button", onclick: () => { notes = notes.filter((x) => x !== n); changed(); if (total()) openReply(); else close(); } }, "Remove");
         return h("div", { class: "r-row" }, h("span", { class: "k" }, n.kind === "ask" ? "?" : "›"), text, h("span", { class: "acts" }, edit, remove));
       });
       const notesSec = notes.length ? h("section", { class: "r-sec" }, h("p", { class: "ve-label caps" }, `Notes · ${notes.length}`), rows) : null;
       sheet({ title: "Your reply", copy: "Copy reply", body: [notesSec, ...parts.map((p) => p.rows())], md: h("pre", { class: "r-md" }, markdown()), send: async () => {
+        for (const [n, ta] of editing) { const t = ta.value.trim(); if (t) n.text = t; }
+        if (editing.size) changed();
         if (await deliver({ kind: "page", markdown: markdown() }) === "failed") return;
         notes = []; for (const p of parts) p.clear();
         changed(); close();

@@ -18,7 +18,14 @@ if (asks.length) {
   // a saved answer whose options are gone (the page was revised) is dropped
   for (const a of asks) if (answered(a)) { const v = done[a.dataset.ask]; if ([v].flat().every((x) => inputs(a).some((i) => i.value === x))) write(a, v); else delete done[a.dataset.ask]; }
   const save = () => { try { if (Object.keys(done).length) localStorage.setItem(KEY, JSON.stringify(done)); else localStorage.removeItem(KEY); } catch { /* see above */ } };
-  for (const a of asks) a.addEventListener("change", () => { done[a.dataset.ask] = read(a); save(); R.refresh(); });
+  const record = (a) => { done[a.dataset.ask] = read(a); save(); R.refresh(); };
+  for (const a of asks) {
+    a.addEventListener("change", () => record(a));
+    // a click, Space, or Enter on the option already selected is an answer too, though no change fires;
+    // where a change does follow, it records the final value
+    a.addEventListener("click", (e) => { if (e.target.matches("input")) record(a); });
+    a.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("input")) record(a); });
+  }
   const state = (a) => (answered(a) ? pick(a) : [read(a) ?? []].flat().length ? `${pick(a)} (default)` : "no answer");
   R.parts.push({
     count: () => asks.filter(answered).length,

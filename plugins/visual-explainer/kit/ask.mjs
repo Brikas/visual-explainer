@@ -9,6 +9,7 @@ export function expandAsk(n, { errors, warnings, where, ids, k, total, claims = 
   const at = where(n);
   const id = n.attrs.id;
   if (!id || !/^[\w-]+$/.test(id)) errors.push(`${at}: needs id="word" (letters, digits, - or _)`);
+  else if (id in Object.prototype) errors.push(`${at}: id="${id}" is a reserved name; pick another`);
   else if (ids.has(id)) errors.push(`${at}: id="${id}" is already used at ${ids.get(id)}`);
   ids.set(id, at);
   const q = n.attrs.q || "";
