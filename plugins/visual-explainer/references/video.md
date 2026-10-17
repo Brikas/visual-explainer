@@ -48,7 +48,7 @@ CSS animations, the Web Animations API, timers, `requestAnimationFrame`, canvas,
 - **Video exception:** slow ambient motion helps, so no frame is ever still: light drifting over 30 s or more, a slowly panning grid, faint film grain.
 - Size for a phone held sideways: body text 24 px or larger, labels 15 px or larger, headings 48–88 px, diagram node text 22, edge labels 17, strokes 2 (hot path 3.5). Text 64 px from the sides and 48 px from the top; the bottom 112 px stays clear for captions.
 - Each beat adds or changes one thing (paths draw in with `pathLength="1"` and `stroke-dashoffset`, numbers count up) and settles within about 1.5 s. Under 8 visible boxes per diagram, one focal point per beat.
-- A replay (`diagrams.md`) works as a scene: copy the stepper CSS from `kit/kit.css`, put the SVG in `.ve-steps`, and on `ve:beat` give each `[data-s]` part `.on` when its first step is at most `e.detail.beat`, and `.now` when the beat is above 0 and its list holds it.
+- A replay (`motion.md`) works as a scene: copy the stepper CSS from `kit/kit.css`, put the SVG in `.ve-steps`, and on `ve:beat` give each `[data-s]` part `.on` when its first step is at most `e.detail.beat`, and `.now` when the beat is above 0 and its list holds it.
 
 ## Check, then render
 

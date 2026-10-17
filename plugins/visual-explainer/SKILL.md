@@ -10,7 +10,7 @@ metadata:
 
 # Visual Explainer
 
-Turn what you know into something a person understands in ten seconds. The default output is one HTML page whose spine is figures; text is caption, not content. Animate only when asked.
+Turn what you know into something a person understands in ten seconds. The default output is one HTML page whose spine is figures; text is caption, not content. Animate when motion helps the reader understand a process, a flow, a change of state, or cause and effect; keep what is static still.
 
 ## Deliver
 
@@ -48,18 +48,18 @@ Shape the page to the content; merge, reorder, or drop sections.
 
 | Content | Figure |
 |---|---|
-| Architecture, data flow, pipeline, state, sequence, schema, before/after | hand-drawn SVG (`references/diagrams.md`); a plain box-and-arrow flow can be `<ve-flow>` |
+| Architecture, data flow, pipeline, state, sequence, schema, before/after | hand-drawn SVG (`references/diagrams.md`), stepped or replayed when it moves; a plain box-and-arrow flow can be `<ve-flow>` |
 | A claim in one small part: permission bits, a key's fields | a close-up of that part, drawn large, values on it |
 | Cards, timelines, file maps | CSS grid |
 | Scenarios, failure modes, options | small multiples |
 | Matrix, audit, many rows | `<table>` with status chips |
 | Rates, shares, metrics | `<ve-waffle>`, `<ve-bars>`, `<ve-stack>` (`references/kit.md`); sparklines in SVG; Chart.js only for many interactive series |
 | Depth that carries data | three.js |
-| A process over time | stepper or scene player; a state machine replays one event per step |
+| A process over time, steps, a state machine, queue, or workflow | stepper or scene player; a state machine replays one event per step |
 | A setting to feel: TTL, rollout % | live figure |
 | Slide deck | `references/slides.md` |
 
-Hand-drawn SVG is the default; never bend a figure to fit a tag. Mermaid only when the user asks for it or supplies its source. Do not read or copy `templates/page.html`.
+Hand-drawn SVG is the default; never bend a figure to fit a tag. Steppers, replays, live figures, and three.js: `references/motion.md`. Mermaid only when the user asks for it or supplies its source. Do not read or copy `templates/page.html`.
 
 ## Words
 
@@ -80,8 +80,8 @@ Exact, calm, visual, and specific to the subject: someone who understands the sy
 
 ## Animate
 
-- **Default:** an HTML scene player (`references/diagrams.md`). Script first: one claim per scene, and the picture changes with every sentence.
-- **Video file** (`/generate-video`, MP4): `references/video.md`, rendered with `visual-explainer-video` (or `npx -y -p visual-explainer -p playwright-core visual-explainer-video`).
+- **On the page, wherever it helps, unasked:** steppers, scene players, replays, flow dots, live figures (`references/motion.md`). Script first: one claim per step; the picture changes with every sentence.
+- **Video file** (`/generate-video`, MP4), only on request: `references/video.md`, rendered with `visual-explainer-video` (or `npx -y -p visual-explainer -p playwright-core visual-explainer-video`).
 
 ## Slides and PPTX
 

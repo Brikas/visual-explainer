@@ -1,6 +1,6 @@
 # The kit
 
-The kit is the shared CSS, fonts, SVG defs, and script of every page. You write one marker line; the renderer puts the kit in its place. This sheet lists what it gives you; `diagrams.md` gives the drawing rules.
+The kit is the shared CSS, fonts, SVG defs, and script of every page. You write one marker line; the renderer puts the kit in its place. This sheet lists what it gives you; `diagrams.md` gives the drawing rules and `motion.md` the steppers, replays, and live figures.
 
 ## The source
 
@@ -47,7 +47,7 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 | Small multiples | `.cases` › `<div class="case" data-st="ok\|warn\|risk">`: a chip, `<h3>`, `<svg class="ve-mini" viewBox="0 0 240 128">`; changed parts `.is-st`, a missing part `.is-off` |
 | Chips | `<span class="chip ok\|warn\|risk">word</span>` |
 | Linked highlighting | `data-ref="redis"` on any part; a prose term is `<span class="ve-ref" data-ref="redis" tabindex="0">` (`diagrams.md`) |
-| Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals`; `.ve-co`; `.ve-dim`; `data-flow`: markup in `diagrams.md` |
+| Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals` (`motion.md`); `.ve-co`, `.ve-dim`, `data-flow` (`diagrams.md`) |
 
 ## Data tags
 
