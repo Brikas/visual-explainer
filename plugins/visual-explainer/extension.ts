@@ -5,11 +5,10 @@ import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import type { AgentToolResult, ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { renderQuickSpec } from "./quick/render.mjs";
 import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "./kit/render.mjs";
 
 type VisualExplainerParams = {
-  action: "prepare" | "render" | "render_quick";
+  action: "prepare" | "render";
   topic?: string;
   goal?: string;
   files?: string[];
@@ -18,7 +17,6 @@ type VisualExplainerParams = {
   filename?: string;
   html?: string;
   path?: string;
-  spec?: unknown;
   open?: boolean;
   viewer?: Viewer;
 };
@@ -58,7 +56,7 @@ type PrepareDetails = {
 };
 
 type RenderDetails = OpenResult & {
-  action: "render" | "render_quick";
+  action: "render";
   path: string;
   viewer: Viewer;
   source?: string;
@@ -74,8 +72,8 @@ const visualExplainerParameters = {
   properties: {
     action: {
       type: "string",
-      enum: ["prepare", "render", "render_quick"],
-      description: "Choose prepare to plan, render to render a page source to HTML, or render_quick to validate a compact spec and render it locally.",
+      enum: ["prepare", "render"],
+      description: "Choose prepare to plan, or render to render a page source to HTML.",
     },
     topic: {
       type: "string",
@@ -110,19 +108,14 @@ const visualExplainerParameters = {
       type: "string",
       description: "For action=render, instead of html: a <name>.src.html file in the output directory.",
     },
-    spec: {
-      type: "object",
-      description: "For action=render_quick: compact JSON spec that follows quick/schema.json.",
-      additionalProperties: true,
-    },
     open: {
       type: "boolean",
-      description: "For action=render or render_quick: open the written file. Defaults to true.",
+      description: "For action=render: open the written file. Defaults to true.",
     },
     viewer: {
       type: "string",
       enum: ["browser", "glimpse", "auto"],
-      description: "For action=render or render_quick: browser (default), glimpse, or auto (glimpseui, else the browser)."
+      description: "For action=render: browser (default), glimpse, or auto (glimpseui, else the browser)."
     },
   },
   required: ["action"],
@@ -329,7 +322,6 @@ function prepareVisualExplanation(pi: ExtensionAPI, params: VisualExplainerParam
 }
 
 async function writeRenderedHtml(
-  action: "render" | "render_quick",
   filenameInput: string,
   htmlInput: string,
   open: boolean | undefined,
@@ -407,7 +399,7 @@ async function writeRenderedHtml(
 
   return {
     content: [{ type: "text" as const, text: message }],
-    details: { action, path: outputPath, viewer, ...openResult, ...(source ? { source } : {}), ...(report ? { report } : {}) },
+    details: { action: "render", path: outputPath, viewer, ...openResult, ...(source ? { source } : {}), ...(report ? { report } : {}) },
   };
 }
 
@@ -430,19 +422,11 @@ async function renderVisualExplanation(params: VisualExplainerParams, plan: Plan
     if (params.filename !== undefined) throw new Error("filename is not allowed with path; the page is named after its source");
     validateOpenOptions(params);
     const source = readSourcePath(params.path, () => resolveOutputDirectory().path);
-    return await writeRenderedHtml("render", source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
+    return await writeRenderedHtml(source.filename, source.html, params.open, params.viewer ?? "browser", signal, plan, source.source);
   }
   validateRenderOptions(params);
   if (typeof params.html !== "string") throw new Error("html or path is required for action=render");
-  return await writeRenderedHtml("render", params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
-}
-
-async function renderQuickVisualExplanation(params: VisualExplainerParams, signal?: AbortSignal): Promise<AgentToolResult<VisualExplainerDetails>> {
-  validateRenderOptions(params);
-  if (params.spec === undefined) throw new Error("spec is required for action=render_quick");
-  signal?.throwIfAborted();
-  const html = await renderQuickSpec(params.spec);
-  return await writeRenderedHtml("render_quick", params.filename, html, params.open, params.viewer ?? "browser", signal);
+  return await writeRenderedHtml(params.filename, params.html, params.open, params.viewer ?? "browser", signal, plan);
 }
 
 export default function (pi: ExtensionAPI) {
@@ -454,24 +438,22 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool<typeof visualExplainerParameters, VisualExplainerDetails>({
     name: "visual_explainer",
     label: "Visual Explainer",
-    description: "Plan visual explanations, render a page source to HTML, or validate and locally render a compact quick spec to ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
-    promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source and render_quick only for an explicit supported --quick prompt.",
+    description: "Plan visual explanations, or render a page source to HTML in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR when set).",
+    promptSnippet: "Plan or render visual-explainer pages. Use render with path for a page source.",
     promptGuidelines: [
       "After a plan, architecture, diff review, or substantial implementation, offer a visual explanation when it would clarify the work.",
       "Visuals cost many tokens: ask before visual_explainer action=prepare unless the user asked for a diagram, visual review, recap, or visual plan. If prepare recommends a scout subagent and one is available, gather context first.",
       "Write the page as <name>.src.html in ~/.agent/diagrams/ (or VISUAL_EXPLAINER_OUTPUT_DIR) and pass path to action=render; revise with small edits and render again. viewer=glimpse only when the user wants a Glimpse window.",
-      "action=render_quick only for an explicit --quick on generate-web-diagram, diff-review, plan-review, or project-recap; if it fails or does not fit, render the full page.",
       "A plan source (<ve-plan> tags, references/plans.md) renders the same way, checked against the session's cwd.",
     ],
     parameters: visualExplainerParameters,
     executionMode: "sequential",
     async execute(_toolCallId: string, params: VisualExplainerParams, signal: AbortSignal | undefined, _onUpdate: unknown, ctx: { cwd: string }) {
-      if (params.action !== "prepare" && params.action !== "render" && params.action !== "render_quick") {
-        throw new Error("action must be 'prepare', 'render', or 'render_quick'");
+      if (params.action !== "prepare" && params.action !== "render") {
+        throw new Error("action must be 'prepare' or 'render'");
       }
 
       if (params.action === "prepare") return prepareVisualExplanation(pi, params);
-      if (params.action === "render_quick") return await renderQuickVisualExplanation(params, signal);
       // a labeled message from the page rather than text the user typed; it starts a turn, or waits if the agent is busy
       const onResponse = (markdown: string, page: string) => pi.sendMessage(
         { customType: "visual_explainer_response", content: `The reader replied on ${page}:\n\n${markdown}`, display: true, details: { page } },

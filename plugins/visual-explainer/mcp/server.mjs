@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
-import { renderQuickSpec } from "../quick/render.mjs";
 import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
@@ -45,13 +44,6 @@ const renderInputSchema = z.object({
   viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
 }).strict();
 
-const renderQuickInputSchema = z.object({
-  filename: z.string().min(1).describe("Basename filename; .html is appended when missing."),
-  spec: z.unknown().describe("Compact JSON spec that follows visual-explainer quick/schema.json."),
-  open: z.boolean().default(false).describe("Open the written file after rendering. Defaults to false for MCP."),
-  viewer: viewerSchema.default("browser").describe("Viewer to use when open is true."),
-}).strict();
-
 const renderOutputSchema = z.object({
   path: z.string(),
   viewer: viewerSchema,
@@ -70,6 +62,7 @@ const promptArgsSchema = z.object({
 }).strict();
 
 const promptFiles = [
+  "compare.md",
   "diff-review.md",
   "fact-check.md",
   "generate-slides.md",
@@ -82,8 +75,6 @@ const promptFiles = [
 
 const resourceFiles = [
   { name: "skill", uri: "visual-explainer://skill/SKILL.md", path: "SKILL.md", title: "Visual Explainer Skill", mimeType: "text/markdown" },
-  { name: "quick-readme", uri: "visual-explainer://quick/README.md", path: "quick/README.md", title: "Quick Mode README", mimeType: "text/markdown" },
-  { name: "quick-schema", uri: "visual-explainer://quick/schema.json", path: "quick/schema.json", title: "Quick Mode JSON Schema", mimeType: "application/schema+json" },
   // every reference the skill points to, so a client with no file access can still read them
   { name: "kit-css", uri: "visual-explainer://kit/kit.css", path: "kit/kit.css", title: "Kit stylesheet", mimeType: "text/css" },
   ...(existsSync(join(skillDir, "references")) ? readdirSync(join(skillDir, "references")) : []).filter((file) => file.endsWith(".md")).sort().map((file) => (
@@ -264,7 +255,6 @@ function prepareVisualExplanation(params) {
     "Choose the page shape with the visual-explainer prompts and skill resources.",
     "Gather and verify the facts yourself; the server does not call an LLM.",
     "Write <name>.src.html in the output directory and call visual_explainer_render_html with path (without file access: html and filename).",
-    "For explicit quick mode, build a spec that follows visual-explainer://quick/schema.json and call visual_explainer_render_quick.",
     "The server writes only inside its output directory (default ~/.agent/diagrams/).",
   ];
 
@@ -401,22 +391,6 @@ function registerTools(server) {
       if (path === undefined && (html === undefined || filename === undefined)) throw new Error("pass html with filename, or path");
       const source = path === undefined ? undefined : readSourcePath(path, () => resolveOutputDirectory().path);
       const result = await writeRenderedHtml(source?.filename ?? filename, source?.html ?? html, open, viewer, root ?? process.cwd(), source?.source);
-      return renderToolResult(result.message, result.output);
-    } catch (error) {
-      return renderToolError(error);
-    }
-  });
-
-  server.registerTool("visual_explainer_render_quick", {
-    title: "Render Visual Explainer Quick Spec",
-    description: "Validate a quick-mode JSON spec and render it to the configured output directory (default ~/.agent/diagrams/). Does not call an LLM.",
-    inputSchema: renderQuickInputSchema,
-    outputSchema: renderOutputSchema,
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-  }, async ({ filename, spec, open, viewer }) => {
-    try {
-      const html = await renderQuickSpec(spec);
-      const result = await writeRenderedHtml(filename, html, open, viewer);
       return renderToolResult(result.message, result.output);
     } catch (error) {
       return renderToolError(error);

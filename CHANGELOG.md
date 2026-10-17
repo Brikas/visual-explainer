@@ -15,10 +15,15 @@
 - `<ve-bars>`, `<ve-waffle>`, and `<ve-stack>` turn a few numbers into a chart, with units on every label and one scale across charts that share a `max`. `<ve-flow>`, the boxes-and-arrows tag from plans, works on any page, including in a step-through with linked highlighting and a moving dot on each stepped arrow. A mistake stops the render and names its line. Hand-drawn diagrams stay the default.
 - Every render reports its figures, uncaptioned figures, tags, and prose words in one line. `node kit/check.mjs page.html` opens the page in Chrome at phone and desktop widths and reports script errors, sideways scrolling, and diagram labels under 12 px.
 - The MCP server serves the skill's `references/*.md` as resources, so a client that cannot read files can follow them.
+- `/compare` draws two or more options side by side, recommends one, and lets you pick in the page; your pick comes back to the agent in the reply.
 
 ### Changed
 - `/plan-review` writes its review as a plan page: each finding is a claim with evidence from the code and a suggested fix you accept or reject, and your answers come back as one response.
+- `/diff-review` asks about each risk worth fixing, so your reply comes back as the list of fixes to make. `/project-recap` ends by asking where to start. Both chart sizes and churn with the kit's data tags.
 - A printed page uses its own look's colors on white, not the default amber.
+
+### Removed
+- `--quick` mode: the `quick/` renderer and schema, Pi `action: "render_quick"`, and MCP `visual_explainer_render_quick`. A kit page now costs about as little to write, and it gets replies, the four looks, and the page checks that quick pages lacked.
 
 ### Fixed
 - Section navigation on narrow screens no longer shows a grey scrollbar under the links. The links scroll with a faded edge, and buttons such as a skim toggle stay in place.

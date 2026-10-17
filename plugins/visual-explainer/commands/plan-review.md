@@ -5,7 +5,7 @@ description: Compare an implementation plan against the current codebase, with e
 
 Load the visual-explainer skill and make a visual plan review.
 
-Input: `$@` is a plan path or plan text. If it is empty, ask for the plan. If it has `--quick`, remove the flag and follow the skill's Quick mode.
+Input: `$@` is a plan path or plan text. If it is empty, ask for the plan.
 
 Read the whole plan, every file it references, and the code that depends on them. For each proposed change, check that the file, function, or type exists, that current behavior matches the plan, which ripple effects it misses, and whether its tests fit the repo style. Cite the plan section and `file:line`.
 
