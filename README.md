@@ -36,7 +36,7 @@ Step through a state machine one event at a time: the route each event took ligh
 |---|---|---|
 | Claude Code | Marketplace plugin | Preserved marketplace shape with source at `plugins/visual-explainer/` |
 | Pi | Package metadata plus installer | `package.json` advertises the skill, prompts, and native `visual_explainer` tool with `prepare` and `render` actions; `install-pi.sh` installs copied skill/prompt resources for legacy manual installs |
-| MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes render tools, prompt templates, and read-only skill resources without starting an HTTP server |
+| MCP hosts | Local stdio MCP server | `visual-explainer-mcp` exposes prepare and render tools, prompt templates, and read-only skill resources without starting an HTTP server |
 | PPTX export | Best-effort static utility | `visual-explainer-pptx` converts simple HTML slide decks to `.pptx`; HTML remains the source of truth |
 | Video export | Local renderer (needs ffmpeg, Chrome, and `playwright-core`, installed separately) | `/generate-video` writes a video deck and `visual-explainer-video` records it to a 1080p MP4, frame by frame, narrated when a speech API key is set and captioned otherwise |
 | Antigravity CLI | Native Agent Skills path | Copy `plugins/visual-explainer/` to `~/.gemini/antigravity-cli/skills/visual-explainer` for global use or `.agents/skills/visual-explainer` for one workspace |
@@ -77,13 +77,13 @@ The package manifest advertises the canonical skill, command templates, and Pi t
 }
 ```
 
-The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to render a page source (`path`) or complete HTML to `~/.agent/diagrams/`, or to `VISUAL_EXPLAINER_OUTPUT_DIR` when set, with the same output jail as the MCP server. The opt-in `action: "render_quick"` validates a compact JSON spec and renders it with the bundled local renderer. Render actions can open with `viewer: "browser"` by default, `viewer: "glimpse"` when `glimpseui` is installed, or `viewer: "auto"` to try Glimpse and fall back to the browser. `/generate-web-diagram` remains the bundled prompt template command.
+The Pi extension registers one native `visual_explainer` tool. Use `action: "prepare"` to plan a visual explanation after generating or reviewing a substantial plan, architecture, diff, or implementation, and `action: "render"` to render a page source (`path`) or complete HTML to `~/.agent/diagrams/`, or to `VISUAL_EXPLAINER_OUTPUT_DIR` when set, with the same output jail as the MCP server. Render can open with `viewer: "browser"` by default, `viewer: "glimpse"` when `glimpseui` is installed, or `viewer: "auto"` to try Glimpse and fall back to the browser. `/generate-web-diagram` remains the bundled prompt template command.
 
 If you previously used the old curl/manual installer, remove those copied files before using `pi install`; otherwise Pi will report skill and prompt conflicts because the user-level copies shadow the package resources:
 
 ```bash
 rm -rf ~/.pi/agent/skills/visual-explainer
-rm -f ~/.pi/agent/prompts/{diff-review,fact-check,generate-slides,generate-visual-plan,generate-web-diagram,plan-review,project-recap}.md
+rm -f ~/.pi/agent/prompts/{compare,diff-review,fact-check,generate-slides,generate-video,generate-visual-plan,generate-web-diagram,plan-review,project-recap}.md
 rm -f ~/.pi/agent/prompts/s[h]are*.md
 ```
 
@@ -122,7 +122,7 @@ Example checkout configuration:
 }
 ```
 
-The server exposes three tools: `visual_explainer_prepare`, `visual_explainer_render_html`, and `visual_explainer_render_quick`. Render tools default to `open: false`; set `open: true` only when you want the server to request a browser or Glimpse window. It also exposes the bundled command templates as MCP prompts and the canonical `SKILL.md`, its `references/*.md`, command markdown, quick README, and quick schema as read-only resources.
+The server exposes two tools: `visual_explainer_prepare` and `visual_explainer_render_html`. Render defaults to `open: false`; set `open: true` only when you want the server to request a browser or Glimpse window. It also exposes the bundled command templates as MCP prompts and the canonical `SKILL.md`, its `references/*.md`, the kit stylesheet, and command markdown as read-only resources.
 
 **Antigravity CLI:**
 
@@ -437,27 +437,17 @@ Use `configs/copilot/AGENTS.md` as custom instructions or rules guidance. For VS
 
 | Command | What it does |
 |---------|-------------|
-| `/generate-web-diagram` | Generate an HTML diagram for any topic |
+| `/generate-web-diagram` | Generate a figure-first page for any topic: diagrams, data, or a concept explained |
 | `/generate-visual-plan` | An implementation plan you answer in the page: the change drawn, a short tree of claims, decisions with suggested defaults, then one response to paste back. After the build, the same page shows what was built |
 | `/generate-slides` | Generate a magazine-quality slide deck |
 | `/generate-video` | Generate a narrated MP4 explainer, or record a walkthrough of a live web app |
 | `/diff-review` | Visual diff review with architecture comparison and code review |
 | `/plan-review` | Check a plan against the codebase: each finding shows its evidence and a fix you accept or reject in the page |
 | `/project-recap` | Mental model snapshot for context-switching back to a project |
+| `/compare` | Draw two or more options side by side, recommend one, and let you pick in the page; the pick comes back to the agent |
 | `/fact-check` | Verify accuracy of a document against actual code |
 
 The agent also kicks in automatically when it's about to dump a complex table in the terminal (4+ rows or 3+ columns) — it renders HTML instead.
-
-## Quick Mode
-
-Add `--quick` to `/generate-web-diagram`, `/diff-review`, `/plan-review`, or `/project-recap` to ask the agent for a compact JSON spec. The bundled renderer validates the spec, escapes its content, and creates a complete self-contained HTML page. Pi uses the existing `visual_explainer` tool with `action: "render_quick"`. Other harnesses can run `plugins/visual-explainer/quick/render.mjs` locally.
-
-Quick mode is opt-in. Commands without `--quick` keep the full custom HTML workflow. The agent also falls back to full mode when the content does not fit the quick schema or when validation or rendering fails.
-
-```text
-/generate-web-diagram --quick authentication request flow
-/diff-review --quick main..HEAD
-```
 
 ## Slide Deck Mode
 
@@ -504,7 +494,6 @@ plugins/
     ├── SKILL.md           ← workflow + design principles
     ├── extension.ts       ← Pi native tool
     ├── commands/          ← slash commands
-    ├── quick/             ← JSON schema + deterministic local renderer
     ├── kit/               ← shared page CSS and script, renderer, page check
     ├── mcp/               ← local stdio MCP server
     ├── pptx/              ← best-effort static PPTX exporter
@@ -521,7 +510,7 @@ plugins/
         └── slide-deck.html (slide engine + reference deck)
 ```
 
-**Output:** `~/.agent/diagrams/filename.html` → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tools default to `open: false`.
+**Output:** `~/.agent/diagrams/filename.html` → opens in browser. The agent writes a short source, `filename.src.html`, that links the shared kit; the renderer builds the page from it and keeps it for small revisions. On request, the agent also writes `filename.md` as an AI-readable companion; it asks before replacing one. In Pi, agents can offer `visual_explainer` `prepare` after a substantial plan, architecture, diff, or implementation, then `render` to write and open the page. MCP hosts use the `visual-explainer-mcp` stdio server, whose render tool defaults to `open: false`.
 
 Pages are figure-first: the first screen shows the answer as a picture and one sentence. Each page uses one of four registers (Instrument for reviews and metrics, Blueprint for architecture, Paper for concepts, Editorial for recaps and decks), each with fixed fonts, a contrast-checked palette, and one shared spacing and type scale. Terms in the text and parts of the figure light up together on hover. Diagrams are hand-drawn inline SVG, so they match the page and can step through a process. Mermaid is used only when you ask for it. Tables carry status chips, metrics get bars and sparklines, and prose follows a Simplified Technical English style.
 
