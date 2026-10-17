@@ -41,12 +41,13 @@ function bars(n, ctx) {
   }
   const labelW = shared ? 9 * CH + 12 : Math.max(...rows.map((r) => r.name.length)) * CH + 12;
   const valueW = shared ? 6 * CH + 8 : Math.max(...rows.map((r) => withUnit(r.raw, unit).length)) * CH + 8;
-  const span = 240 - labelW - valueW;
+  // long labels or values widen the drawing, so a bar always has at least 60 units to grow in
+  const span = Math.max(240 - labelW - valueW, 60), width = labelW + span + valueW;
   const svg = rows.map((r, i) => {
     const y = 12 + i * 28, w = max ? Math.round((r.value / max) * span * 100) / 100 : 0;
     return `<text y="${y}">${esc(r.name)}</text><rect${r.hot ? ' class="hot"' : ""} x="${labelW}" y="${y - 7}" width="${w}" height="14" rx="2"/><text x="${labelW + w + 8}" y="${y}">${esc(withUnit(r.raw, unit))}</text>`;
   }).join("");
-  return `<svg class="ve-bars" viewBox="0 0 240 ${rows.length * 28 - 4}" role="img" aria-label="${esc(n.attrs.label || "")}">${svg}</svg>`;
+  return `<svg class="ve-bars" viewBox="0 0 ${width} ${rows.length * 28 - 4}" role="img" aria-label="${esc(n.attrs.label || "")}">${svg}</svg>`;
 }
 
 function waffle(n, { errors, warnings, where }) {

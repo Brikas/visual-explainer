@@ -1,3 +1,5 @@
+// One block scope, so the kit's names never clash with a page's own script.
+{
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Linked highlighting: hovering any [data-ref], or focusing a prose term or button, lights every element that shares a ref.
@@ -97,5 +99,6 @@ if (!still) {
   for (const el of document.querySelectorAll('main > *')) io.observe(el);
 }
 
-// Last line: kit/check.mjs reads this to tell that the whole script ran.
+// Last statement: kit/check.mjs reads this to tell that the whole script ran.
 document.documentElement.dataset.veKit = "ready";
+}

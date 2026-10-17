@@ -74,8 +74,12 @@ export function renderPage(source) {
 <link href="https://fonts.googleapis.com/css2?${esc(FONTS[register])}&amp;display=swap" rel="stylesheet">
 <style data-ve-kit>
 ${css}</style>`;
-  // The defs go first in <body>, unless the page carries its own (the template does, so it opens raw).
-  if (!find(doc, (n) => n.attrs.id === "ve-ah").length) body.children.unshift({ html: `\n${readFileSync(join(here, "defs.svg"), "utf8").trimEnd()}` });
+  // The shared defs go first in <body>, each only if the page has no element with its id (the template has all four, so it opens raw).
+  const defs = readFileSync(join(here, "defs.svg"), "utf8").trimEnd().split("\n").filter((line) => {
+    const id = line.match(/^\s*<\w+ id="([^"]+)"/)?.[1];
+    return !id || !find(doc, (n) => n.attrs.id === id).length;
+  });
+  if (defs.length > 4) body.children.unshift({ html: `\n${defs.join("\n")}` });
   const scripts = find(doc, (n) => n.name === "script" && "data-ve-kit" in n.attrs);
   if (scripts.length) {
     scripts[0].html = script;
