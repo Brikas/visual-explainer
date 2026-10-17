@@ -47,10 +47,7 @@ The renderer adds the charset, viewport, favicon, the register's fonts, the kit 
 | Small multiples | `<div class="cases">` › `<div class="case" data-st="ok\|warn\|risk">` + `<span class="chip ok">Handled</span><h3>…</h3><svg class="ve-mini" viewBox="0 0 240 128">`; mark the changed parts `.is-st`, a missing part `.is-off` |
 | Chips | `<span class="chip ok\|warn\|risk">word</span>` |
 | Linked highlighting | `data-ref="redis"` on any part; a prose term is `<span class="ve-ref" data-ref="redis" tabindex="0">` (`diagrams.md`) |
-| Stepper, replay | `<figure class="ve-steps">`, parts with `data-s="N"` or a list `"0 3 5"`, `.ve-player` with `ol.ve-cap`; `.ve-tok`, `.ve-at`, `.ve-vals` (`diagrams.md`) |
-| Callouts | `<g class="ve-co [q]" data-s="N"><circle r="11"/><text>N</text></g>` and a leader `path.ann` (`diagrams.md`) |
-| Dimensions | `<g class="ve-dim [is-key]"><path class="ext"/><path class="ln"/><text/></g>` (`diagrams.md`) |
-| Flow dots | `<path data-flow="hit" data-every="420" d="…"/>` and one `<g class="ve-dots">` (`diagrams.md`) |
+| Stepper, replay, callouts, dimensions, flow dots | `.ve-steps` with `data-s`, `.ve-tok`, `.ve-at`, `.ve-vals`; `.ve-co`; `.ve-dim`; `data-flow`: markup in `diagrams.md` |
 | Entrance | automatic: blocks rise in once, `data-count` numbers count up, bars grow; none under reduced motion or in print |
 
 ## Data tags

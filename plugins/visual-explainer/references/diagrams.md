@@ -16,7 +16,7 @@ y:210                  ┌──▼───┐
 ```
 
 - Sketch in ASCII first, then turn columns and rows into coordinates.
-- Make the viewBox width close to the display width (720–1000) so `14` units ≈ 14px. On narrow screens the `.frame` scrolls and the SVG keeps a `min-width`. Text never shrinks below the type minimums.
+- Make the viewBox width close to the display width (720–1000) so `14` units ≈ 14px.
 - At least 40 units between boxes. Orthogonal edges (`M x y H x V y`). Labels 9 units above their line, with the `.ve-el` halo.
 - SVG text does not wrap: keep lines short (about 18 characters), `<tspan x=".." dy="1.2em">` for a second line.
 - Draw edges first and nodes after, so nodes sit on top.
@@ -29,7 +29,7 @@ y:210                  ┌──▼───┐
 Node and edge markup is in `kit.md`.
 
 - **Shape says what a thing is.** Rect for a service. Cylinder for a datastore (`path.sh` body + `ellipse.sh.lid`). Rect with 3 short dividers for a queue. Dashed rect for something optional or down.
-- **Glyph** (`.gl`): a 16-unit line drawing in the node's top-left corner, only when the kind is not clear from the name. Stroke `--text-dim`, never filled, never emoji.
+- **Glyph** (`.gl`): a 16-unit line drawing in the node's top-left corner, only when the kind is not clear from the name. Never emoji.
 - **Edge language:** solid = sync call · dashed = async or optional · thick glowing accent = the path this figure is about · red ✕ = blocked.
 
 ## Dimensions
@@ -133,7 +133,7 @@ A number that does not measure a span in the drawing (see Dimensions) gets a sma
 
 ## Entrance motion
 
-Each top-level block rises 1rem and fades in once. `data-count` numbers count up and bars grow. JS adds `.js-motion` only when motion is allowed, so no-JS, print, and reduced motion show the final state. Nothing beyond this: no parallax, no scroll-jacking, no looping effects other than flow dots.
+The kit runs it (`kit.md`). Nothing beyond it: no parallax, no scroll-jacking, no looping effects other than flow dots.
 
 ## 3D with three.js
 

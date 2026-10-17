@@ -510,7 +510,7 @@ plugins/
     ├── pptx/              ← best-effort static PPTX exporter
     ├── video/             ← MP4 renderer for video decks
     ├── references/        ← read on demand
-    │   ├── style-guide.md (four registers, tokens, scale, components, polish pass)
+    │   ├── style-guide.md (four registers, scale rules, components, polish pass)
     │   ├── kit.md         (kit marker, parts, data tags, <ve-flow>)
     │   ├── diagrams.md    (hand-drawn SVG kit, linked highlighting, stepper/scene player)
     │   ├── slides.md      (deck budget, engine contract, delivery check)

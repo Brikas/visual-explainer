@@ -98,21 +98,17 @@ recaps, decks      Editorial     Instrument Serif + Sans           the domain's 
 - **Craft is part of the meaning.** Raised nodes on a dot-grid stage, shapes that say what a thing is, a halo on the focal element, a glow on the hot path, the number leading the headline. Each effect points at something.
 - **The figure is the interface.** Prose terms and figure elements light up together. Overview first, detail on demand.
 - **Motion shows change or flow.** Blocks rise in once, numbers count up, dots move along edges at the real rate. No parallax, scroll-jacking, or decorative loops. Under reduced motion, show the final state.
-- **Stay on the scale.** No sizes, gaps, radii, or colors outside the style guide.
-- **Two schemes:** tokens on `:root`, and `prefers-color-scheme` redefines tokens only.
 - **Never:** Inter, Roboto, Arial, or system-ui as the only font; violet or fuchsia Tailwind accents; neon; glassmorphism; gradient text, backgrounds, or blobs; clip-art, mascots, or emoji markers; centered everything; an accent bar on a rounded card; `01/02/03` when order does not matter.
-- **Reading comfort:** `html{font-size:17px}`, `rem` elsewhere. Body ≥ 16px, labels ≥ 12px, SVG labels ≥ 12px as rendered. 45–68ch, left-aligned. Text ≥ 4.5:1, lines ≥ 3:1. Italics and uppercase only for a few words. One focal point per viewport. Show position (`2 / 5`, section nav). Slides keep their `clamp()` px scale.
+- **Reading comfort:** italics and uppercase only for a few words. One focal point per viewport. Show position (`2 / 5`, section nav).
 - **Themes:** switchable themes or fonts, or a named palette (Dracula, Nord…) → `references/themes.md`.
 
 ## Known traps
 
-- Set `min-width:0` on grid/flex children, `grid-template-columns:minmax(0,1fr)` on single-column grids, and `overflow-wrap:anywhere` on paths. Put wide tables, code, and SVG in a scroll container.
+- Put wide tables and code in a scroll container, and `overflow-wrap:anywhere` on long paths.
 - Do not put `display:flex` on `<li>` when its markers matter.
 - If the user asks for Mermaid: `theme:'base'` with `themeVariables` read from `getComputedStyle` (Mermaid cannot read CSS variables), re-rendered on a theme or font switch. Quote labels that hold punctuation; `<br/>`, not `\n`. Natural size in a scroll box, never shrunk to fit. No page class named `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, or `.commit`; Mermaid uses them. For zoom and pan, copy `templates/mermaid-flowchart.html` from Older recipes.
-- Wrap `history.replaceState` in `try/catch`. It throws on `file://` pages.
 - Write `<` as `&lt;` inside KaTeX or MathJax math (`$$ y_{&lt;t} $$`). The browser reads a raw `<t` as a tag before the math library runs.
 - Add section navigation (sticky TOC with scroll-spy) only for 4+ sections.
-- Respect `prefers-reduced-motion`. The kit's motion does; your own motion must also show the final state without JS, in print, and under reduced motion.
 
 ## Animate
 
@@ -141,21 +137,15 @@ Longer how-to files from v0.11.0, outside this skill. Fetch one only when you ne
 ## Before delivery
 
 ```
-□ one complete HTML file at the path; opens with no console errors
+□ rendered with no ✗; kit/check.mjs passes (errors, overflow at 390 and 1280 px, labels ≥ 12 px), when it can run
 □ first viewport: main idea as a picture + one sentence
-□ figures outnumber prose paragraphs; the lead and prose are short enough that the pictures carry the page
+□ figures outnumber prose paragraphs, and the render's Page: line shows no figure without a caption
 □ every number has a picture; spans carry dimension lines; scenarios are small multiples, not a sentence table
 □ each fact sits in a place in a figure (label, dimension, callout, caption) before it becomes a sentence
 □ topic motif: 2–3 touches taken from the subject; page still reads without them
-□ each figure: <figure> + "Fig. N" claim figcaption; role="img" + aria-label on the drawing
+□ each hand-drawn SVG: role="img" + aria-label; each figcaption states its claim
 □ key terms linked with data-ref where hovering helps
-□ no horizontal overflow at 1280px or 390px wide
-□ both color schemes work (or one theme was deliberate)
-□ type in rem; body ≥16px, labels ≥12px; all text ≥4.5:1 in both schemes; visible keyboard focus
 □ headings state takeaways; paragraphs stay short
-□ every size, gap, and radius is on the style-guide scale; polish pass done
-□ typography: real dashes, minus, ×, curly quotes; no-break space before units; tabular figures in data
-□ layout: one flush-left axis, consistent section openers, varied rhythm; blurred, each screen still shows one dominant element
-□ register fonts and neutrals used exactly; would not pass for a generic dark/violet template
+□ one flush-left axis, varied rhythm, one dominant element per screen; would not pass for a generic dark/violet template
 □ slides: each fits, nav chrome works, all source items covered, delivery check passes
 ```
