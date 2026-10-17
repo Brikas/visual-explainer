@@ -6,6 +6,9 @@
 - Explainers animate wherever motion helps the reader understand a process, a flow, or a change of state, without being asked. Steppers, replays, flow dots, and live figures are the default there; a video file and PPTX still need a request.
 - Agents read about 20% less for a page without motion: step-throughs, replays, live figures, and 3D moved to their own guide that agents read when a figure moves, and the style guide no longer repeats what the kit already does.
 
+### Fixed
+- A section that opens with a small label above its heading no longer sits flush on the figure below.
+
 ## [0.13.0] - 2026-10-17
 
 ### Highlights
