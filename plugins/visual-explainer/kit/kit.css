@@ -227,7 +227,8 @@ button:hover, button:focus-visible { border-color: var(--accent); }
 .case[data-st=ok] { --st: var(--ok); } .case[data-st=warn] { --st: var(--warn); } .case[data-st=risk] { --st: var(--risk); }
 .ve-mini { width: 100%; height: auto; font: 600 15px var(--font-body); }
 .ve-mini .ve-n .sh { filter: none; }
-.ve-mini .ve-n .sub { font-size: 13px; }
+/* a .cases column is never under 14.5rem, so a mini is ≥ 211 px and 14 units render ≥ 12.3 px */
+.ve-mini .ve-n .sub { font-size: 14px; }
 .ve-mini .is-st.ve-e { stroke: var(--st); stroke-width: 2.75; }
 .ve-mini .is-st .sh { stroke: var(--st); stroke-width: 2; }
 .ve-mini .is-st .sub { fill: var(--st); }
