@@ -84,6 +84,63 @@ function inspect(r) {
       return cs.fill !== "none" && parseFloat(cs.fillOpacity) >= 0.9 && parseFloat(cs.opacity) >= 0.9;
     });
   };
+  // A label a border or line runs through or touches: a visible point of a shape's outline lies in the label's ink box, or within
+  // TOUCH px of its ends. A label fully inside a shape (a node's name) or clear of it never has one there. A point is not visible
+  // when an opaque shape painted later covers it (an edge under a callout's disc). A label with a --bg halo (paint-order: stroke,
+  // like .ve-el) is drawn to sit on what was painted before it, and a label wholly under an opaque shape painted after it is hidden.
+  // A line under 1.6:1 against the page (a --border rule, a ledger, a grid) is decoration, not a crossing.
+  const crossed = (svg, texts) => {
+    const TOUCH = 4;
+    const seen = (e) => { let o = 1; for (let n = e; n && n !== svg.parentElement; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
+    const later = (a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING;
+    const lum = (c) => {
+      const n = (c.match(/rgba?\(([^)]*)\)/)?.[1] ?? c.match(/color\(srgb ([^)]*)\)/)?.[1] ?? "").split(/[\s,/]+/).filter(Boolean).map(Number);
+      if (n.length < 3 || n.some(Number.isNaN)) return null;
+      const [r, g, b] = (/^rgb/.test(c) ? n.slice(0, 3).map((v) => v / 255) : n.slice(0, 3)).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const probeBg = document.createElement("i"); probeBg.style.color = "var(--bg, #fff)"; document.body.append(probeBg);
+    const bg = lum(getComputedStyle(probeBg).color) ?? 1; probeBg.remove();
+    const faint = (c) => { const l = lum(c); return l !== null && (Math.max(l, bg) + 0.05) / (Math.min(l, bg) + 0.05) < 1.6; };
+    const shapes = [];
+    for (const e of svg.querySelectorAll("rect, circle, ellipse, line, polyline, polygon, path")) {
+      if (e.closest("defs, marker, symbol, clipPath, mask, pattern, text") || !e.checkVisibility({ opacityProperty: true, visibilityProperty: true }) || seen(e) < 0.3) continue;
+      // a filled path is an area even without a closing z (a datastore's body); a line, a polyline, or an unfilled open path is a line
+      const cs = getComputedStyle(e), filled = cs.fill !== "none" && !(e instanceof SVGLineElement) && !(e instanceof SVGPolylineElement);
+      const open = !filled && !(e instanceof SVGPathElement && /z\s*$/i.test(e.getAttribute("d") ?? "")) && !(e instanceof SVGRectElement || e instanceof SVGCircleElement || e instanceof SVGEllipseElement || e instanceof SVGPolygonElement);
+      const stroked = cs.stroke !== "none" && parseFloat(cs.strokeWidth) > 0 && parseFloat(cs.strokeOpacity) >= 0.3 && !faint(cs.stroke);
+      const opaque = filled && parseFloat(cs.fillOpacity) >= 0.9 && seen(e) >= 0.9;
+      const edged = stroked || (filled && parseFloat(cs.fillOpacity) >= 0.5 && !faint(cs.fill));
+      if (!edged && !opaque) continue;
+      const m = e.getScreenCTM(), inv = m.inverse(), len = e.getTotalLength(), step = 1.5 / (Math.hypot(m.a, m.b) || 1), pts = [];
+      if (edged) for (let s = 0; s <= len; s += step) { const p = e.getPointAtLength(s); pts.push(new DOMPoint(p.x, p.y).matrixTransform(m)); }
+      shapes.push({ e, pts, opaque, open, inside: (p) => e.isPointInFill(new DOMPoint(p.x, p.y).matrixTransform(inv)) });
+    }
+    const covers = (o, p) => o.opaque && o.inside(p);
+    const out = [];
+    for (const { t, s } of texts) {
+      // measured again: the overlap check above may have scrolled the page since texts were measured
+      const b = ink(t);
+      if (seen(t) < 0.3) continue;
+      const cs = getComputedStyle(t), halo = cs.paintOrder.startsWith("stroke") && cs.stroke !== "none" && parseFloat(cs.strokeWidth) >= 3;
+      const probe = [[b.left, b.top], [b.right, b.top], [b.left, b.bottom], [b.right, b.bottom], [(b.left + b.right) / 2, (b.top + b.bottom) / 2]].map(([x, y]) => ({ x, y }));
+      if (shapes.some((o) => later(t, o.e) && probe.every((p) => covers(o, p)))) continue;
+      let worst = null;
+      for (const sh of shapes) {
+        if (halo && !later(t, sh.e)) continue;
+        for (const p of sh.pts) {
+          if (p.x < b.left - TOUCH || p.x > b.right + TOUCH || p.y < b.top + 1 || p.y > b.bottom - 1) continue;
+          if (shapes.some((o) => o !== sh && later(sh.e, o.e) && covers(o, p))) continue;
+          const through = p.x > b.left && p.x < b.right;
+          if (!worst || (through && !worst.through)) worst = { through, open: sh.open };
+          if (through) break;
+        }
+        if (worst?.through) break;
+      }
+      if (worst) out.push(`"${s}": label ${worst.through ? "crossed by" : "touches"} a ${worst.open ? "line" : "border"}`);
+    }
+    return out;
+  };
   for (const svg of scope.querySelectorAll("svg")) {
     if (svg.parentElement.closest("svg") || !svg.closest("main")) continue;
     const box = svg.getBoundingClientRect();
@@ -103,6 +160,7 @@ function inspect(r) {
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left), y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
       if (x > 1 && y > 1 && x * y > 0.1 * Math.min(area(a), area(b)) && !covered(texts[i].t, texts[j].t)) found.push({ where: name(svg), what: `"${texts[i].s}" overlaps "${texts[j].s}"` });
     }
+    if (!svg.matches(".ve-bars, .ve-waffle, .ve-stack")) found.push(...crossed(svg, texts).map((what) => ({ where: name(svg), what })));
   }
   scrollTo(0, 0);
   return found;
@@ -214,7 +272,7 @@ export async function lookAt(file, { sheet = true } = {}) {
     for (const { where, what } of list) {
       const key = `${where}: ${what}`;
       if (!geometry.has(key)) geometry.set(key, []);
-      if (step) geometry.get(key).push(step);
+      if (step && !geometry.get(key).includes(step)) geometry.get(key).push(step);
     }
   };
   try {
