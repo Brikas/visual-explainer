@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- Rendering a page now looks at it in a browser when Chrome and `playwright-core` are available. It reports text that overlaps other text or runs past its drawing (at every step of a stepper too), headings that sit on the figure below, labels under 12 px, script errors, and sideways scrolling. It also writes a contact sheet of the first screen, the figures, and every step. Pi and MCP hand the sheet straight to the agent; elsewhere the render prints its path. Agents no longer write their own browser scripts or take their own screenshots to check a page.
+- Rendering a page now looks at it in a browser when Chrome and `playwright-core` are available. It reports text that overlaps other text or runs past its drawing, labels a border or line runs through (at every step of a stepper too), headings that sit on the figure below, labels under 12 px, script errors, and sideways scrolling. It also writes a contact sheet of the first screen, the figures, and every step. Pi and MCP hand the sheet straight to the agent; elsewhere the render prints its path. Agents no longer write their own browser scripts or take their own screenshots to check a page.
 - Kit classes for a dashed boundary, queue and worker slots, chart axes, and tables, which pages used to style by hand.
 
 ### Changed

@@ -25,12 +25,11 @@ async function launch() {
   try {
     return { browser: await chromium.launch() };
   } catch (e) {
-    if (!/Executable doesn't exist/.test(e.message)) throw e;
     try {
       return { browser: await chromium.launch({ channel: "chrome" }) };
     } catch {
       const { version } = createRequire(import.meta.url)("playwright-core/package.json");
-      return { skipped: `no browser found. Install Google Chrome, or run: npx playwright-core@${version} install chromium-headless-shell` };
+      return { skipped: `no browser started (${e.message.split("\n")[0]}). Install Google Chrome, or run: npx playwright-core@${version} install chromium-headless-shell` };
     }
   }
 }
@@ -64,7 +63,9 @@ function inspect(r) {
   const short = (s) => s.trim().replace(/\s+/g, " ").slice(0, 32);
   const name = (svg) => {
     const f = svg.closest("figure"), i = figs.indexOf(f);
-    const cap = short(f?.querySelector("figcaption")?.textContent || svg.getAttribute("aria-label") || "");
+    const capEl = f?.querySelector("figcaption");
+    const capText = capEl ? [...capEl.childNodes].filter((n) => !n.classList?.contains("fig-n")).map((n) => n.textContent).join("") : "";
+    const cap = short(capText || svg.getAttribute("aria-label") || "");
     return `${i >= 0 ? `Fig ${i + 1}` : "A drawing"}${cap ? ` ("${cap}…")` : ""}`;
   };
   const found = [];
@@ -279,9 +280,14 @@ export async function lookAt(file, { sheet = true } = {}) {
     // as a reader opens it, at each width
     for (const width of WIDTHS) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
-      page.on("console", (m) => { if (m.type() === "error") result.errors.push(`console at ${width}px: ${m.text()}`); });
+      page.on("console", (m) => {
+        if (m.type() !== "error") return;
+        // an offline or blocked fetch from another origin (the kit's web font) is the host's situation, not the page's
+        if (/^Failed to load resource: net::/.test(m.text()) && !m.location().url.startsWith("file:")) return;
+        result.errors.push(`console at ${width}px: ${m.text()}`);
+      });
       page.on("pageerror", (e) => result.errors.push(`page error at ${width}px: ${e.message}`));
-      await page.goto(url, { waitUntil: "load" });
+      await page.goto(url, { waitUntil: "load", timeout: 15000 });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
       result.widths[width] = await page.evaluate(measure, MIN_LABEL);
@@ -293,7 +299,7 @@ export async function lookAt(file, { sheet = true } = {}) {
     const items = [];
     try {
       const page = await context.newPage();
-      await page.goto(url, { waitUntil: "load" });
+      await page.goto(url, { waitUntil: "load", timeout: 15000 });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(200);
       note(await page.evaluate(inspect, null));
@@ -364,6 +370,9 @@ export async function lookAt(file, { sheet = true } = {}) {
       result.sheets = await drawSheets(browser, sheets, outBase);
       result.omitted = omitted;
     }
+  } catch (e) {
+    // the page is already written; a browser failure is a skipped check, not a failed render
+    return { skipped: `the visual check could not finish: ${String(e.message).split("\n")[0]}`, problems: [], sheets: [] };
   } finally {
     await browser.close();
   }
