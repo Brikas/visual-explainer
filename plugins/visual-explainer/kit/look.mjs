@@ -11,6 +11,8 @@ const MIN_LABEL = 12;
 const MIN_HEADING_GAP = 8;
 // ≈1.15 megapixels, the most a model takes in before it scales an image down
 const SHEET_W = 1200, SHEET_H = 960, PAD = 16, GAP = 12, LABEL = 22, MAX_SHEETS = 3;
+// a font still downloading after load must not hold the render; a late font only shifts glyphs slightly
+const fontsReady = () => Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]);
 
 async function launch() {
   let chromium;
@@ -288,7 +290,7 @@ export async function lookAt(file, { sheet = true } = {}) {
       });
       page.on("pageerror", (e) => result.errors.push(`page error at ${width}px: ${e.message}`));
       await page.goto(url, { waitUntil: "load", timeout: 15000 });
-      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(fontsReady);
       await page.waitForTimeout(300);
       result.widths[width] = await page.evaluate(measure, MIN_LABEL);
       await page.close();
@@ -300,7 +302,7 @@ export async function lookAt(file, { sheet = true } = {}) {
     try {
       const page = await context.newPage();
       await page.goto(url, { waitUntil: "load", timeout: 15000 });
-      await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(fontsReady);
       await page.waitForTimeout(200);
       note(await page.evaluate(inspect, null));
       const gaps = await page.evaluate(headings, MIN_HEADING_GAP);
@@ -350,7 +352,7 @@ export async function lookAt(file, { sheet = true } = {}) {
         try {
           const d = await dark.newPage();
           await d.goto(url, { waitUntil: "load" });
-          await d.evaluate(() => document.fonts.ready);
+          await d.evaluate(fontsReady);
           await d.waitForTimeout(200);
           const png = await d.screenshot();
           items.push({ kind: "figure", cells: [{ png, ...pngSize(png), label: "First screen · dark" }] });

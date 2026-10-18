@@ -89,9 +89,9 @@ export function renderPage(source, { sendBack = false } = {}) {
     if (!("role" in svg.attrs)) svg.openRaw = svg.openRaw.replace(/\s*(\/?)>$/, ' role="img"$1>');
     const min = Math.ceil(((+(svg.attrs.viewbox ?? "").trim().split(/[\s,]+/)[2]) || 0) * 12 / 14);
     if (!hasClass(svg, "ve-svg") || hasClass(svg, "ve-flow") || min <= 700 || /min-width|--ve-min/.test(svg.attrs.style ?? "")) continue;
-    const style = svg.openRaw.match(/\sstyle\s*=\s*"([^"]*)"/i);
+    const style = svg.openRaw.match(/\sstyle\s*=\s*(["'])(.*?)\1/is);
     if (!style && svg.attrs.style !== undefined) continue;
-    svg.openRaw = style ? svg.openRaw.replace(style[0], ` style="${style[1].replace(/;?\s*$/, "")}; --ve-min: ${min}px"`) : svg.openRaw.replace(/\s*(\/?)>$/, ` style="--ve-min: ${min}px"$1>`);
+    svg.openRaw = style ? svg.openRaw.replace(style[0], ` style=${style[1]}${style[2].replace(/;?\s*$/, "")}; --ve-min: ${min}px${style[1]}`) : svg.openRaw.replace(/\s*(\/?)>$/, ` style="--ve-min: ${min}px"$1>`);
   }
   if (errors.length) return { html: source, kit: true, errors, warnings };
 
