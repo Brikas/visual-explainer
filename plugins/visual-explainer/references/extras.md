@@ -1,6 +1,6 @@
 ## Mermaid
 
-Only when the user asks for it or supplies its source. `theme:'base'` with `themeVariables` from `getComputedStyle`, re-rendered on a theme switch. Quote labels with punctuation; `<br/>`, not `\n`. Natural size in a scroll box. No page class named `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, or `.commit`.
+Only when the user asks for it or supplies its source, on kit pages. Put the source where a drawing goes: `<div class="frame"><pre class="mermaid" aria-label="what it shows">flowchart LR …</pre></div>`. The render draws it as plain SVG in the page's colors and fonts, with its own phone layout; no script, config, or theme code. `<br/>` for a line break. It does not step or replay: draw a figure that should move by hand.
 
 ## Images
 

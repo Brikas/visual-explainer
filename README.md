@@ -494,7 +494,7 @@ plugins/
     ├── SKILL.md           ← workflow + design principles
     ├── extension.ts       ← Pi native tool
     ├── commands/          ← slash commands
-    ├── kit/               ← shared page CSS and script, renderer, page check
+    ├── kit/               ← shared page CSS and script, renderer, page check, vendored Pele for Mermaid
     ├── mcp/               ← local stdio MCP server
     ├── pptx/              ← best-effort static PPTX exporter
     ├── video/             ← MP4 renderer for video decks
