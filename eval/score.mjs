@@ -1,24 +1,22 @@
 #!/usr/bin/env node
 // Scores every <name>.html in a directory, with its <name>.src.html when present. Deterministic: sizes, the static
-// report, pictures per 100 prose words, and the browser check (kit/check.mjs, run once per page).
+// report, pictures per 100 prose words, and the browser check (kit/look.mjs, run once per page, without a sheet).
 // usage: node eval/score.mjs <dir> [--json] [--no-check]
-import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 import { renderPage, reportPage } from "../plugins/visual-explainer/kit/render.mjs";
+import { lookAt } from "../plugins/visual-explainer/kit/look.mjs";
 import { hasPlan } from "../plugins/visual-explainer/plan/render.mjs";
 
-const CHECK = join(dirname(fileURLToPath(import.meta.url)), "../plugins/visual-explainer/kit/check.mjs");
 const tokens = (text) => Math.round(text.length / 4); // ≈ tokens: characters / 4
 
-function check(file) {
-  const run = spawnSync(process.execPath, [CHECK, file, "--json"], { encoding: "utf8" });
-  if (run.status !== 0 && run.status !== 1) return { exit: run.status, skipped: (run.stderr || run.stdout).trim().split("\n")[0] };
-  const r = JSON.parse(run.stdout), widths = Object.values(r.widths);
+async function check(file) {
+  const r = await lookAt(file, { sheet: false });
+  if (r.skipped) return { exit: 2, skipped: r.skipped };
+  const widths = Object.values(r.widths);
   const smallest = widths.map((w) => w.smallest?.px).filter((px) => px !== undefined);
   return {
-    exit: run.status,
+    exit: r.problems.length ? 1 : 0,
     smallestPx: smallest.length ? Math.min(...smallest) : null,
     errors: r.errors.length,
     overflow: Object.entries(r.widths).filter(([, w]) => w.overflow).map(([width]) => +width),
@@ -27,7 +25,7 @@ function check(file) {
   };
 }
 
-function score(dir, file, withCheck) {
+async function score(dir, file, withCheck) {
   const html = readFileSync(join(dir, file), "utf8");
   const srcFile = file.replace(/\.html?$/i, ".src.html");
   const src = existsSync(join(dir, srcFile)) ? readFileSync(join(dir, srcFile), "utf8") : null;
@@ -41,7 +39,7 @@ function score(dir, file, withCheck) {
     ...report,
     // figures per 100 prose words; null when the page has no prose words outside figures (shown as ∞, or — with no figures)
     picsPer100Words: report.proseWords ? Math.round(report.figures * 10000 / report.proseWords) / 100 : null,
-    check: withCheck ? check(join(dir, file)) : null,
+    check: withCheck ? await check(join(dir, file)) : null,
   };
 }
 
@@ -65,6 +63,7 @@ if (!dir || !existsSync(dir)) {
   process.exit(2);
 }
 const files = readdirSync(dir).filter((f) => /\.html?$/i.test(f) && !/\.src\.html?$/i.test(f)).sort();
-const rows = files.map((f) => score(resolve(dir), f, !argv.includes("--no-check")));
+const rows = [];
+for (const f of files) rows.push(await score(resolve(dir), f, !argv.includes("--no-check")));
 console.log(argv.includes("--json") ? JSON.stringify(rows, null, 2) : table(rows));
 if (rows.some((r) => r.check?.skipped)) console.error(`check skipped: ${rows.find((r) => r.check?.skipped).check.skipped}`);

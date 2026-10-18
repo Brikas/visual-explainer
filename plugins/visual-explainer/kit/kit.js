@@ -102,6 +102,6 @@ if (!still) {
 // reader replies (kit/reply.js, inlined before this); a page opened raw has none
 window.veReply?.page();
 
-// Last statement: kit/check.mjs reads this to tell that the whole script ran.
+// Last statement: kit/look.mjs reads this to tell that the whole script ran.
 document.documentElement.dataset.veKit = "ready";
 }

@@ -6,7 +6,7 @@ import { lstatSync, readFileSync, realpathSync, renameSync, writeFileSync } from
 import { spawn } from "node:child_process";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { esc, find, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
+import { esc, find, hasClass, kids, parseHtml, serialize, textOf, words } from "./html.mjs";
 import { expandFlow } from "./flow.mjs";
 import { expandAsk } from "./ask.mjs";
 import { TAGS } from "./tags.mjs";
@@ -78,6 +78,20 @@ export function renderPage(source, { sendBack = false } = {}) {
   for (const t of tags) {
     if (t.name === "ve-ask") t.html = expandAsk(t, { errors, warnings, where, ids, k: asks.indexOf(t) + 1, total: asks.length, page: true });
     else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
+  }
+  // Each drawing says what it shows, and a viewBox wider than 816 gets the min-width that keeps 14-unit labels at 12 px.
+  const drawings = [];
+  const top = (n) => { for (const c of kids(n)) if (c.name === "svg") drawings.push(c); else top(c); };
+  top(doc);
+  for (const svg of drawings) {
+    if (svg.attrs["aria-hidden"] === "true") continue;
+    if (!("aria-label" in svg.attrs) && !("aria-labelledby" in svg.attrs) && !kids(svg).some((k) => k.name === "title")) errors.push(`${where(svg)}: add aria-label="…" saying what the drawing shows (aria-hidden="true" if it is decoration)`);
+    if (!("role" in svg.attrs)) svg.openRaw = svg.openRaw.replace(/\s*(\/?)>$/, ' role="img"$1>');
+    const min = Math.ceil(((+(svg.attrs.viewbox ?? "").trim().split(/[\s,]+/)[2]) || 0) * 12 / 14);
+    if (!hasClass(svg, "ve-svg") || hasClass(svg, "ve-flow") || min <= 700 || /min-width|--ve-min/.test(svg.attrs.style ?? "")) continue;
+    const style = svg.openRaw.match(/\sstyle\s*=\s*"([^"]*)"/i);
+    if (!style && svg.attrs.style !== undefined) continue;
+    svg.openRaw = style ? svg.openRaw.replace(style[0], ` style="${style[1].replace(/;?\s*$/, "")}; --ve-min: ${min}px"`) : svg.openRaw.replace(/\s*(\/?)>$/, ` style="--ve-min: ${min}px"$1>`);
   }
   if (errors.length) return { html: source, kit: true, errors, warnings };
 
@@ -156,13 +170,13 @@ function openFile(path) {
   spawn(cmd, args, { detached: true, stdio: "ignore" }).unref();
 }
 
-function main() {
+async function main() {
   const argv = process.argv.slice(2);
   const flag = (name) => argv.includes(name);
   const value = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
   const input = argv.find((a, i) => !a.startsWith("-") && !["-o", "--root"].includes(argv[i - 1]));
   if (!input) {
-    console.error("usage: node render.mjs page.src.html [-o page.html] [--root <repo>] [--lint] [--open]");
+    console.error("usage: node render.mjs page.src.html [-o page.html] [--root <repo>] [--lint] [--open] [--no-check]");
     process.exit(2);
   }
   const output = value("-o") ?? (/\.src\.html?$/i.test(input) ? input.replace(/\.src(\.html?)$/i, "$1") : null);
@@ -186,7 +200,17 @@ function main() {
   writeFileSync(temp, result.kit ? prepareRenderedHtml(result.html) : result.html);
   renameSync(temp, output);
   console.log(`✓ ${resolve(output)}  ${summary}${result.warnings.length ? ` · ${result.warnings.length} warning(s)` : ""}${report}`);
+  // a kit page is looked at in a browser, so the agent reads one report and one sheet instead of scripting its own screenshots
+  if (result.kit && !hasPlan(source) && !flag("--no-check")) {
+    const { lookAt, lookLines } = await import("./look.mjs");
+    const looked = await lookAt(output);
+    for (const line of lookLines(looked)) console.log(`  ${line}`);
+    if (looked.problems.length) {
+      console.log(`✗ ${looked.problems.length} visual problem(s); the page was written. Fix them and render again.`);
+      process.exitCode = 1;
+    }
+  }
   if (flag("--open")) openFile(resolve(output));
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();
