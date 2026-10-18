@@ -322,9 +322,9 @@ export async function lookAt(file, { sheet = true } = {}) {
       // a drawing wider than its frame scrolls sideways on the page; its crop shows all of it, then the page is put back
       const shoot = async (el) => {
         const clip = await el.evaluate((e) => {
-          const frames = [...(e.matches(".frame") ? [e] : []), ...e.querySelectorAll(".frame")];
+          const frames = [...(e.matches(".frame") ? [e] : []), ...e.querySelectorAll(".frame")].filter((f) => f.scrollWidth > f.clientWidth + 1);
           e.__veOld = frames.map((f) => [f, f.getAttribute("style")]);
-          for (const f of frames) f.style.cssText += ";overflow:visible;width:max-content;max-width:none";
+          for (const f of frames) f.style.cssText += `;overflow:visible;width:${f.scrollWidth}px;max-width:none`;
           const rs = [e, ...frames].map((x) => x.getBoundingClientRect());
           const x = Math.min(...rs.map((r) => r.left)), y = Math.min(...rs.map((r) => r.top));
           return { x: x + scrollX, y: y + scrollY, width: Math.max(...rs.map((r) => r.right)) - x, height: Math.max(...rs.map((r) => r.bottom)) - y };
