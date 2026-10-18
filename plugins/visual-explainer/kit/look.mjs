@@ -319,10 +319,26 @@ export async function lookAt(file, { sheet = true } = {}) {
 
       // figures below the first screen, steppers aside (their steps follow)
       const figs = await page.$$("main figure");
+      // a drawing wider than its frame scrolls sideways on the page; its crop shows all of it, then the page is put back
+      const shoot = async (el) => {
+        const clip = await el.evaluate((e) => {
+          const frames = [...(e.matches(".frame") ? [e] : []), ...e.querySelectorAll(".frame")];
+          e.__veOld = frames.map((f) => [f, f.getAttribute("style")]);
+          for (const f of frames) f.style.cssText += ";overflow:visible;width:max-content;max-width:none";
+          const rs = [e, ...frames].map((x) => x.getBoundingClientRect());
+          const x = Math.min(...rs.map((r) => r.left)), y = Math.min(...rs.map((r) => r.top));
+          return { x: x + scrollX, y: y + scrollY, width: Math.max(...rs.map((r) => r.right)) - x, height: Math.max(...rs.map((r) => r.bottom)) - y };
+        });
+        try {
+          return await page.screenshot({ fullPage: true, clip });
+        } finally {
+          await el.evaluate((e) => { for (const [f, s] of e.__veOld) s === null ? f.removeAttribute("style") : f.setAttribute("style", s); delete e.__veOld; });
+        }
+      };
       for (const [i, fig] of figs.entries()) {
         const { top, stepped } = await fig.evaluate((f) => ({ top: f.getBoundingClientRect().bottom + scrollY, stepped: f.matches(".ve-steps") || !!f.querySelector(".ve-steps") }));
         if (!sheet || stepped || top <= 900) continue;
-        const png = await fig.screenshot();
+        const png = await shoot(fig);
         items.push({ kind: "figure", cells: [{ png, ...pngSize(png), label: `Fig ${i + 1}` }] });
       }
 
@@ -339,7 +355,7 @@ export async function lookAt(file, { sheet = true } = {}) {
           if (!(await page.evaluate(goStep, [r, k]))) break;
           await page.waitForTimeout(60);
           note(await page.evaluate(inspect, r), `${k + 1}`);
-          if (sheet) { const png = await drawing.screenshot(); cells.push({ png, ...pngSize(png), label: `${figN ? `Fig ${figN}` : "Stepper"} · step ${k + 1}/${n}` }); }
+          if (sheet) { const png = await shoot(drawing); cells.push({ png, ...pngSize(png), label: `${figN ? `Fig ${figN}` : "Stepper"} · step ${k + 1}/${n}` }); }
         }
         if (n) await page.evaluate(goStep, [r, n - 1]);
         if (cells.length) items.push({ kind: "steps", cells });
