@@ -213,4 +213,5 @@ async function main() {
   if (flag("--open")) openFile(resolve(output));
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();
+// Node resolves symlinks for import.meta.url, so a renderer reached through a symlinked skill folder must compare real paths
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) await main();

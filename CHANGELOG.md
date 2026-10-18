@@ -14,6 +14,7 @@
 
 ### Fixed
 - A section that opens with a small label above its heading no longer sits flush on the figure below.
+- Running `kit/render.mjs` or `plan/render.mjs` through a symlinked skill folder no longer exits without writing anything.
 
 ### Removed
 - `kit/check.mjs`: the render runs its checks.
