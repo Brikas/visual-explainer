@@ -20,7 +20,7 @@ The kit is the shared CSS, fonts, SVG defs, and script of every page. You write 
     <p class="meta">service · source · date range</p>
   </header>
   <figure>
-    <div class="frame"><svg class="ve-svg" viewBox="0 0 800 300" role="img" aria-label="What the picture shows">…</svg></div>
+    <div class="frame"><svg class="ve-svg" viewBox="0 0 800 300" aria-label="What the picture shows">…</svg></div>
     <figcaption><span class="fig-n">Fig. 1</span>The claim in one sentence.</figcaption>
   </figure>
   <section>
@@ -41,7 +41,9 @@ The renderer adds the charset, viewport, favicon, fonts, kit CSS and script, and
 | Part | Markup |
 |---|---|
 | Node | `<g class="ve-n [is-key]"><rect class="sh"/> [<path class="gl"/>] <text/> [<text class="sub"/>]</g>`; text centres on its `y`; a datastore is `path.sh` + `ellipse.sh.lid`; `<text class="ve-kind">` names the kind |
-| Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>`; draw edges before nodes |
+| Edge | `<path class="ve-e [is-hot\|is-async]"/>`, arrowhead included, + `<text class="ve-el [l\|r]">verb</text>` (`l` ends at `x`, `r` starts there); draw edges before nodes |
+| Boundary, slots, axes | `rect.ve-bnd` + `text.ve-bnd-t` tag; `rect.ve-slot` (`.is-on` filled); `.ve-axis` lines + `text.ve-axis-t` |
+| Table | `<div class="ve-table"><table>`; `class="num"` on number cells; `<small>` for a note in a cell |
 | Flags | `.is-new`, `.is-gone` on `.ve-n` or `.ve-e`; `<text class="ve-x">✕</text>` marks a blocked edge |
 | KPI strip | `.kpis` › `.kpi`: `<span class="ve-label">Hit rate</span><span class="val"><span data-count="94">94</span><span class="unit">%</span></span>` + a data tag; `data-count` counts up |
 | Small multiples | `.cases` › `<div class="case" data-st="ok\|warn\|risk">`: a chip, `<h3>`, `<svg class="ve-mini" viewBox="0 0 240 128">`; changed parts `.is-st`, a missing part `.is-off` |

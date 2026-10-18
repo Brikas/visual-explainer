@@ -17,10 +17,10 @@ y:210                  ┌──▼───┐
                        └──────┘
 ```
 
-- Sketch in ASCII first, then turn columns and rows into coordinates. A viewBox 720–800 wide keeps `14`-unit labels at 12 px or more on a phone (the SVG is at least 700 px wide); a wider one needs a bigger `.ve-svg` `min-width`.
+- Sketch in ASCII first, then turn columns and rows into coordinates. Labels 14 units or more; the renderer sizes the drawing so they stay readable on a phone, whatever the viewBox.
 - At least 40 units between boxes. Orthogonal edges (`M x y H x V y`). Labels 9 units above their line.
 - SVG text does not wrap: lines of about 18 characters, `<tspan x=".." dy="1.2em">` for a second line.
-- A boundary (process, network, trust zone) is a dashed rect with a mono label in its top-left corner.
+- A boundary (process, network, trust zone) is a dashed `rect.ve-bnd` with a `text.ve-bnd-t` label in its top-left corner.
 - Over about 12 nodes, draw a 5–8 node overview and put the detail in cards or a second figure.
 - Sequence: one column per actor with a thin lifeline, time runs down, each arrow labeled with its call. Schema: one box per table with its key fields in mono, crow's-foot ends for many.
 
@@ -81,7 +81,7 @@ The same small diagram once per case, in the same coordinates, so the eye sees o
 
 ## Small charts
 
-A number that does not measure a span gets a small chart beside it: `<ve-waffle>` for "N of 100", `<ve-bars>` for 2–5 values (`hot` on the one that matters), `<ve-stack>` for a share of a whole (`kit.md`). A trend is a sparkline: `0 0 100 24`, one `polyline`, `vector-effect: non-scaling-stroke`, with `role="img"` and an `aria-label` holding the values.
+A number that does not measure a span gets a small chart beside it: `<ve-waffle>` for "N of 100", `<ve-bars>` for 2–5 values (`hot` on the one that matters), `<ve-stack>` for a share of a whole (`kit.md`). A trend is a sparkline: `0 0 100 24`, one `polyline`, `vector-effect: non-scaling-stroke`, with an `aria-label` holding the values. A drawn chart's axes and ticks are `.ve-axis`, their labels `.ve-axis-t`.
 
 ## Page structure for 4+ sections
 

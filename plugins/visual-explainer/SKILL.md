@@ -16,8 +16,7 @@ Turn what you know into something a person understands in ten seconds. The defau
 
 - Write the source `~/.agent/diagrams/<descriptive-name>.src.html` (or the tool's output directory, or the user's path). Pick a register with `<html data-register="…">` and put `<link rel="stylesheet" href="kit.css" data-ve-kit>` in `<head>`. The kit (`references/kit.md`) brings tokens, fonts, figure CSS, and script; add only this page's CSS. CDN only for libraries.
 - Render to `<name>.html`. Pi: `visual_explainer` `prepare` → `render` with `path:"<name>.src.html"` (ask before `prepare` unless a visual was requested). MCP: `visual_explainer_render_html` with `path` (no file access: `html` + `filename`). Elsewhere: `node <this skill's directory>/kit/render.mjs <name>.src.html --open`. Nothing is written until every `✗` is fixed. `viewer:"glimpse"` only on request.
-- Revise with small edits to the `.src.html` and render again. Never write the whole page again.
-- If `playwright-core` is installed, run `node <this skill's directory>/kit/check.mjs <name>.html` and fix what it reports.
+- The render then looks at the page in a browser: fix every `✗` it lists, look at its sheet once (Pi and MCP attach it; elsewhere open the printed path), then fix with small edits to the `.src.html` and render again. Never write the whole page again, write browser scripts, or take your own screenshots. No comments in the source.
 - Never read the kit's CSS, JS, or `.mjs` source for a page; the references and render errors cover what a page needs. Only a standalone slide or video deck copies the one block its reference names from `kit/kit.css`.
 - A terminal table of 4+ rows or 3+ columns becomes a page and a one-line reply.
 - A Markdown companion (`<name>.md`) only when the user asks for AI-readable output; ask before overwriting one.
@@ -49,18 +48,18 @@ Shape the page to the content; merge, reorder, or drop sections.
 
 | Content | Figure |
 |---|---|
-| Architecture, data flow, pipeline, state, sequence, schema, before/after | hand-drawn SVG (`references/diagrams.md`), stepped or replayed when it moves; a plain box-and-arrow flow can be `<ve-flow>` |
+| Architecture, data flow, pipeline, state, sequence, schema, before/after | hand-drawn SVG (`references/diagrams.md`), with flow dots, stepped, or replayed when it moves; a plain box-and-arrow flow can be `<ve-flow>` |
 | A claim in one small part: permission bits, a key's fields | a close-up of that part, drawn large, values on it |
 | Cards, timelines, file maps | CSS grid |
 | Scenarios, failure modes, options | small multiples |
-| Matrix, audit, many rows | `<table>` with status chips |
-| Rates, shares, metrics | `<ve-waffle>`, `<ve-bars>`, `<ve-stack>` (`references/kit.md`); sparklines in SVG; Chart.js only for many interactive series |
+| Matrix, audit, many rows | `.ve-table` with status chips |
+| Numbers: a trend, a size or rank, a share, a spread, a link, a place | line or sparkline; bars, sorted (around zero for a deviation); waffle or stack; strip or histogram; scatter; map. `<ve-bars>`, `<ve-waffle>`, `<ve-stack>` (`references/kit.md`); Chart.js only for many interactive series |
 | Depth that carries data | three.js |
 | A process over time, steps, a state machine, queue, or workflow | stepper or scene player; a state machine replays one event per step |
 | A setting to feel: TTL, rollout % | live figure |
-| Slide deck | `references/slides.md` |
+| Slide deck, only when asked (`/generate-slides`, `--slides`); PPTX only on request or `--pptx` | `references/slides.md` |
 
-Hand-drawn SVG is the default; never bend a figure to fit a tag. Steppers, replays, live figures, and three.js: `references/motion.md`. Mermaid only when the user asks for it or supplies its source. Do not read or copy `templates/page.html`.
+Hand-drawn SVG is the default; never bend a figure to fit a tag. Steppers, replays, live figures, and three.js: `references/motion.md`. Mermaid only when the user asks for it or supplies its source; images (a hero or concept art) only when an image tool exists; both, and the older v0.11 recipes: `references/extras.md`. Do not read or copy `templates/page.html`.
 
 ## Words
 
@@ -74,8 +73,7 @@ Exact, calm, visual, and specific to the subject: someone who understands the sy
 
 ## Known traps
 
-- Wide tables and code go in a scroll container; long paths get `overflow-wrap:anywhere`. No `display:flex` on an `<li>` whose marker matters.
-- Mermaid (only on request): `theme:'base'` with `themeVariables` from `getComputedStyle`, re-rendered on a theme switch. Quote labels with punctuation; `<br/>`, not `\n`. Natural size in a scroll box. No page class named `.node`, `.label`, `.nodeLabel`, `.edgeLabel`, `.cluster`, `.marker`, `.note`, `.actor`, or `.commit`.
+- Code goes in a scroll container; long paths get `overflow-wrap:anywhere`. No `display:flex` on an `<li>` whose marker matters.
 - Inside KaTeX or MathJax, write `<` as `&lt;` (`$$ y_{&lt;t} $$`); the browser reads a raw `<t` as a tag.
 - Section navigation only for 4+ sections.
 
@@ -84,29 +82,10 @@ Exact, calm, visual, and specific to the subject: someone who understands the sy
 - **On the page, wherever it helps, unasked:** steppers, scene players, replays, flow dots, live figures (`references/motion.md`). Script first: one claim per step; the picture changes with every sentence.
 - **Video file** (`/generate-video`, MP4), only on request: `references/video.md`, rendered with `visual-explainer-video` (or `npx -y -p visual-explainer -p playwright-core visual-explainer-video`).
 
-## Slides and PPTX
-
-Slides only when asked (`/generate-slides`, `--slides`): `references/slides.md`. PPTX only on request or `--pptx`: build the HTML deck, then `visual-explainer-pptx deck.html deck.pptx` (or `node ./pptx/export.mjs` from a checkout). Tell the user the HTML stays the source: the PPTX has no animation, navigation, custom fonts, live diagrams, or JS.
-
-## Images
-
-Optional, for a hero or concept art when `surf` or another image tool exists; never for data or structure. Never write base64 yourself: put `<img src="hero.png" alt="…">` in the source and, after each render, run:
-
-```sh
-node -e 'const fs=require("fs"),[f,i]=process.argv.slice(1);fs.writeFileSync(f,fs.readFileSync(f,"utf8").replace(`src="${i}"`,`src="data:image/png;base64,${fs.readFileSync(i,"base64")}"`))' <name>.html hero.png
-```
-
-## Older recipes
-
-Fetch only for mechanics; keep this guide's look: `https://raw.githubusercontent.com/nicobailon/visual-explainer/v0.11.0/plugins/visual-explainer/` + `references/css-patterns.md` · `references/libraries.md` (Chart.js, anime.js) · `references/responsive-nav.md` (sticky TOC) · `references/slide-patterns.md` · `templates/architecture.html` · `templates/data-table.html` · `templates/mermaid-flowchart.html` (zoom and pan).
-
 ## Before delivery
 
 ```
-□ rendered with no ✗; check.mjs passes when it can run
-□ the Page: line shows no figure without a caption; figures outnumber prose paragraphs
-□ the first screen is the answer, and the nine rules above hold
-□ each hand-drawn SVG has role="img" and an aria-label; key terms carry data-ref
-□ it would not pass for a generic dark/violet template
+□ the render shows no ✗, and its Page: line no figure without a caption
+□ one look at the sheet: the first screen is the answer; each figure states its claim and draws the mechanism; it would not pass for a generic template
 □ slides: each fits, all source items are covered, the delivery check passes
 ```

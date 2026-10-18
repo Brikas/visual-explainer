@@ -2,12 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+- Rendering a page now looks at it in a browser when Chrome and `playwright-core` are available. It reports text that overlaps other text or runs past its drawing (at every step of a stepper too), headings that sit on the figure below, labels under 12 px, script errors, and sideways scrolling. It also writes a contact sheet of the first screen, the figures, and every step. Pi and MCP hand the sheet straight to the agent; elsewhere the render prints its path. Agents no longer write their own browser scripts or take their own screenshots to check a page.
+- Kit classes for a dashed boundary, queue and worker slots, chart axes, and tables, which pages used to style by hand.
+
 ### Changed
 - Explainers animate wherever motion helps the reader understand a process, a flow, or a change of state, without being asked. Steppers, replays, flow dots, and live figures are the default there; a slide deck, a video file, and PPTX still need a request.
 - Agents read about 16% less for a page without motion, and no longer open the kit's source to look things up: step-throughs, replays, live figures, and 3D moved to their own guide that agents read when a figure moves, and the style guide no longer repeats what the kit already does.
+- A wide drawing is sized so its labels stay readable on a phone, so agents no longer work out label scale by hand. Every drawing gets `role="img"`, and a drawing without an `aria-label` stops the render.
+- SKILL.md is about 15% shorter: images, Mermaid, the older recipes, and PPTX moved to the references that need them, and checks the renderer now does left the delivery checklist.
 
 ### Fixed
 - A section that opens with a small label above its heading no longer sits flush on the figure below.
+
+### Removed
+- `kit/check.mjs`: the render runs its checks.
 
 ## [0.13.0] - 2026-10-17
 

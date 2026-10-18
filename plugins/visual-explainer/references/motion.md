@@ -31,7 +31,7 @@ For a state machine, a workflow, or a reducer, each step is one event. The capti
 - **Tokens** run under the nodes, entering each box and leaving from the far side; a token that lands in or leaves a slot goes after the nodes. `--dur` lengthens a run (900 ms default); `--d` delays it, so a burst is tokens about 150 ms apart.
 - **Parts that come and go** (a queued job, a busy worker, the current state's ring) are `.ve-at` groups, shown only on the steps their `data-s` lists; a plain `data-s` part stays once it appears. Draw the empty slot underneath.
 - **A changing value** (a count, a TTL, a state name) is one text per step at one spot inside `.ve-vals`, in step order.
-- **A shared resource** (a worker pool, permits) is a dashed boundary holding its slots and its count.
+- **A shared resource** (a worker pool, permits) is a dashed boundary (`.ve-bnd`) holding its slots (`rect.ve-slot`, `.is-on` when filled) and its count.
 - **Kind labels:** `<text class="ve-kind">` above a node name: `fact`, `decision`, `state`, or `effect`. Number edges with `.ve-co.q` when captions refer to them.
 
 ## Live figure

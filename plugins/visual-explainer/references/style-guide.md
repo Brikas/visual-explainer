@@ -39,7 +39,7 @@ The project's own design system overrides the register; a named palette → `the
 
 ## Figures
 
-- **Pick by relationship:** change over time → line or sparkline. Magnitude → bars. Part of a whole → waffle or stacked bar. Ranking → sorted bars. Deviation → bars around zero. Distribution → strip or histogram. Correlation → scatter. Flow → diagram with flow dots. A process or change of state → stepper or replay (`motion.md`). Place → map.
+- **Which figure:** the figure table in SKILL.md; a process or change of state is a stepper or replay (`motion.md`).
 - **Data-ink:** every mark carries data or guides the eye. No chart borders, plot backgrounds, heavy gridlines, or 3D bars. Gridlines in `--border`, only when values must be read.
 - **Layering:** ground < structure < data < signal (accent), each quieter than the one above. Two lines close together make a third shape: add space or merge them.
 - **Smallest difference:** each distinction as subtle as it can be while still clear. Two label levels: small and dim, larger and bright.
@@ -69,7 +69,6 @@ Reuse the kit's classes first, so the same element looks the same everywhere. Wh
 - **Radius:** `r-1` for chips, buttons, inputs, and inline highlights; `r-2` for frames, tables, and overlays. Nothing else is rounded.
 - **Color:** one accent, on 10% of the screen or less; `ok warn risk info` only mean status. A dimmed label uses `--text-dim`, never opacity; on `--accent-dim` use `--text`.
 - **Motion:** only `transform`, `opacity`, and `stroke-dashoffset`: `fast` for hover, `med` for state, `slow` for steps. Shadow (`--lift`) only on raised nodes and overlays.
-- **Table:** header in the label style on surface; cells padded `s-3 s-4`; row rules only; numbers right-aligned and tabular; in a scroll container with an `r-2` frame.
 - **Callout:** surface, `r-2`, padding `s-4`, a status chip as its title. No colored side bar.
 - **Code block:** mono `--t-small`, surface, `r-2`, padding `s-4`, scrolls sideways.
 - Nothing shifts on load: every SVG has a `viewBox`, every image a width and height.
