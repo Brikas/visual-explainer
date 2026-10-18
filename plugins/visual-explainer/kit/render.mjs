@@ -84,16 +84,22 @@ export function renderPage(source, { sendBack = false } = {}) {
     else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
   }
   // Mermaid becomes plain SVG here, so the page draws offline, follows the theme through CSS, and is checked like any drawing.
-  // A phone gets its own layout when Pele can make one narrower. Pele draws secondary labels at 12 px, so neither layout
-  // shrinks below its natural width: the frame scrolls instead.
+  // A phone gets its own layout when Pele can make one narrower. Neither layout shrinks below its natural width (the frame
+  // scrolls instead), and Pele draws some labels smaller than its base size, so the base grows until the smallest is 12 px.
   for (const [i, pre] of mermaids.entries()) {
     const label = pre.attrs["aria-label"];
     if (!label) { errors.push(`${where(pre)}: add aria-label="…" saying what the diagram shows`); continue; }
     let wide, narrow;
     try {
       const text = decode(inner(pre));
-      wide = drawMermaid(text, { fontSize: 14, maxWidth: 960, idPrefix: `ve-m${i}w` });
-      narrow = drawMermaid(text, { fontSize: 14, maxWidth: 280, idPrefix: `ve-m${i}n` });
+      const draw = (maxWidth, idPrefix) => {
+        for (let fontSize = 14; ; fontSize++) {
+          const r = drawMermaid(text, { fontSize, maxWidth, idPrefix });
+          if (fontSize >= 24 || Math.min(...[...r.svg.matchAll(/font-size(?:="|:\s*)([\d.]+)/g)].map((m) => +m[1])) >= 12) return r;
+        }
+      };
+      wide = draw(960, `ve-m${i}w`);
+      narrow = draw(280, `ve-m${i}n`);
     } catch (e) {
       if (!(e instanceof PeleError)) throw e;
       errors.push(`${where(pre)}: Mermaid: ${e.message.replace(/\s*\n\s*/g, " ")}`);
@@ -101,7 +107,7 @@ export function renderPage(source, { sendBack = false } = {}) {
     }
     const both = narrow.width < wide.width;
     const svg = (r, cls) => r.svg.replace(' role="graphics-document document"', ` role="img" aria-label="${esc(label)}"`).replace('class="pele ', `class="pele${cls} `).replace('style="', `style="min-width:${r.width}px;`);
-    pre.html = `<div class="ve-mermaid">${svg(wide, both ? " is-wide" : "")}${both ? svg(narrow, " is-narrow") : ""}</div>`;
+    pre.html = `<div class="ve-mermaid"${pre.attrs.id ? ` id="${esc(pre.attrs.id)}"` : ""}>${svg(wide, both ? " is-wide" : "")}${both ? svg(narrow, " is-narrow") : ""}</div>`;
   }
   // Each drawing says what it shows, and a viewBox wider than 816 gets the min-width that keeps 14-unit labels at 12 px.
   const drawings = [];

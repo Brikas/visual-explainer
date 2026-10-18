@@ -5,6 +5,7 @@
   .ve-mermaid > .is-wide { display: none; }
   .ve-mermaid > .is-narrow { display: block; }
 }
+@media print { .ve-mermaid > svg { min-width: 0 !important; } }
 .pele {
   --pele-bg: var(--surface); --pele-fg: var(--text); --pele-muted: var(--text-dim); --pele-line: var(--text-dim);
   --pele-surface: var(--surface); --pele-surface-alt: var(--bg); --pele-border: var(--border-bright); --pele-accent: var(--accent);
