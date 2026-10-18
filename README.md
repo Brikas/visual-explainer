@@ -527,6 +527,8 @@ Pages are figure-first: the first screen shows the answer as a picture and one s
 
 Borrows ideas from [Anthropic's frontend-design skill](https://github.com/anthropics/skills) and [interface-design](https://github.com/Dammyjay93/interface-design).
 
+Mermaid diagrams are drawn by [Pele](https://github.com/obsidianmd/pele) from Obsidian (MIT), bundled in `kit/vendor/`.
+
 ## License
 
 MIT

@@ -10,4 +10,5 @@
   --pele-surface: var(--surface); --pele-surface-alt: var(--bg); --pele-border: var(--border-bright); --pele-accent: var(--accent);
   --pele-critical: var(--risk); --pele-font: var(--font-body); --pele-font-mono: var(--font-mono); --pele-radius: 6px;
   --pele-series-1: var(--accent); --pele-series-2: var(--info); --pele-series-3: var(--ok); --pele-series-4: var(--warn); --pele-series-5: var(--risk);
+  --pele-series-6: var(--text-dim); --pele-series-7: color-mix(in srgb, var(--accent) 55%, var(--surface)); --pele-series-8: color-mix(in srgb, var(--info) 55%, var(--surface));
 }

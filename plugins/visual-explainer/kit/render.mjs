@@ -55,11 +55,12 @@ export function renderPage(source, { sendBack = false } = {}) {
   const links = find(doc, (n) => n.name === "link" && "data-ve-kit" in n.attrs);
   const tags = find(doc, (n) => Object.hasOwn(TAGS, n.name) || n.name === "ve-flow" || n.name === "ve-ask");
   const asks = tags.filter((t) => t.name === "ve-ask"), charts = tags.filter((t) => t.name !== "ve-ask");
-  const mermaids = find(doc, (n) => n.name === "pre" && hasClass(n, "mermaid"));
+  // Mermaid is drawn on kit pages only; a deck or another page without the kit keeps its <pre> as written
+  const mermaids = links.length ? find(doc, (n) => n.name === "pre" && hasClass(n, "mermaid")) : [];
   if (!links.length && !tags.length && !mermaids.length) return { html: source, kit: false, errors, warnings, report: count(doc, charts) };
   const lineOf = (pos) => source.slice(0, pos).split("\n").length;
   const where = (n) => `line ${lineOf(n.pos)} <${n.name}${n.attrs.id ? `#${n.attrs.id}` : ""}>`;
-  if (!links.length) errors.push(`${where(tags[0] ?? mermaids[0])}: tags and Mermaid need the kit; add <link rel="stylesheet" href="kit.css" data-ve-kit> to <head>`);
+  if (!links.length) errors.push(`${where(tags[0])}: tags need the kit; add <link rel="stylesheet" href="kit.css" data-ve-kit> to <head>`);
   if (links.length > 1) errors.push(`${links.length} <link data-ve-kit> elements; keep one in <head>`);
   const register = find(doc, (n) => n.name === "html")[0]?.attrs["data-register"] || "instrument";
   if (!FONTS[register]) errors.push(`data-register="${register}" is not a register; use ${Object.keys(FONTS).join(", ")}`);
@@ -83,23 +84,24 @@ export function renderPage(source, { sendBack = false } = {}) {
     else t.html = t.name === "ve-flow" ? expandFlow(t, { errors, warnings, where, ref, page: true }) : TAGS[t.name](t, { errors, warnings, where });
   }
   // Mermaid becomes plain SVG here, so the page draws offline, follows the theme through CSS, and is checked like any drawing.
-  // A phone gets its own layout when Pele can fit one to the 286 px frame; the wide one keeps 14 px labels at 12 px or more.
-  for (const pre of mermaids) {
+  // A phone gets its own layout when Pele can make one narrower. Pele draws secondary labels at 12 px, so neither layout
+  // shrinks below its natural width: the frame scrolls instead.
+  for (const [i, pre] of mermaids.entries()) {
     const label = pre.attrs["aria-label"];
     if (!label) { errors.push(`${where(pre)}: add aria-label="…" saying what the diagram shows`); continue; }
     let wide, narrow;
     try {
       const text = decode(inner(pre));
-      wide = drawMermaid(text, { fontSize: 14, maxWidth: 960 });
-      narrow = drawMermaid(text, { fontSize: 14, maxWidth: 280 });
+      wide = drawMermaid(text, { fontSize: 14, maxWidth: 960, idPrefix: `ve-m${i}w` });
+      narrow = drawMermaid(text, { fontSize: 14, maxWidth: 280, idPrefix: `ve-m${i}n` });
     } catch (e) {
       if (!(e instanceof PeleError)) throw e;
       errors.push(`${where(pre)}: Mermaid: ${e.message.replace(/\s*\n\s*/g, " ")}`);
       continue;
     }
     const both = narrow.width < wide.width;
-    const svg = (r, cls, style) => r.svg.replace("<svg ", `<svg role="img" aria-label="${esc(label)}" `).replace('class="pele ', `class="pele ${cls} `).replace('style="', `style="${style}`);
-    pre.html = `<div class="ve-mermaid">${svg(wide, both ? "is-wide" : "", `min-width:${Math.ceil(wide.width * 12 / 14)}px;`)}${both ? svg(narrow, "is-narrow", "") : ""}</div>`;
+    const svg = (r, cls) => r.svg.replace(' role="graphics-document document"', ` role="img" aria-label="${esc(label)}"`).replace('class="pele ', `class="pele${cls} `).replace('style="', `style="min-width:${r.width}px;`);
+    pre.html = `<div class="ve-mermaid">${svg(wide, both ? " is-wide" : "")}${both ? svg(narrow, " is-narrow") : ""}</div>`;
   }
   // Each drawing says what it shows, and a viewBox wider than 816 gets the min-width that keeps 14-unit labels at 12 px.
   const drawings = [];
