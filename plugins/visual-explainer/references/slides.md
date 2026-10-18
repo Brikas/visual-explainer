@@ -33,4 +33,6 @@ Inventory every item in the source (sections, rows, decisions, details), map eac
 
 ## PPTX
 
+Only on request or `--pptx`: build the HTML deck, then `visual-explainer-pptx deck.html deck.pptx` (or `node ./pptx/export.mjs` from a checkout). Tell the user the HTML stays the source: the PPTX has no animation, navigation, custom fonts, live diagrams, or JS.
+
 `visual-explainer-pptx` reads each `section.slide`: headings, `.slide__subtitle`, lists, paragraphs, tables, and `pre`, so keep that structure semantic. It drops SVG, figures, and captions: when PPTX is requested, give each figure slide its claim in a `<p class="slide__body">` too.

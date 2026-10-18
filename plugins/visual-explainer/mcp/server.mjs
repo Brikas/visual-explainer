@@ -9,6 +9,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod/v4";
 import { prepareRenderedHtml, readSourcePath, renderPageForHost, reportLine, reportPage } from "../kit/render.mjs";
+import { lookAt, lookLines } from "../kit/look.mjs";
 
 const serverPath = fileURLToPath(import.meta.url);
 const mcpDir = dirname(serverPath);
@@ -230,9 +231,9 @@ function compact(value) {
   return Object.fromEntries(Object.entries(value).filter((entry) => entry[1] !== undefined));
 }
 
-function renderToolResult(message, structuredContent) {
+function renderToolResult(message, structuredContent, images = []) {
   return {
-    content: [{ type: "text", text: message }],
+    content: [{ type: "text", text: message }, ...images],
     structuredContent: compact(structuredContent),
   };
 }
@@ -301,6 +302,8 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
     writeRenderedFile(source, htmlInput);
   }
   writeRenderedFile(outputPath, html);
+  // a kit page is looked at in a browser, and its sheet comes back with the report, so the agent never scripts its own screenshots
+  const looked = page?.kit ? await lookAt(outputPath) : undefined;
 
   const openResult = open ? await openRenderedPage(outputPath, viewer) : { openAttempted: false, openStatus: "disabled" };
   let message = `Wrote ${outputPath}.`;
@@ -316,8 +319,10 @@ async function writeRenderedHtml(filenameInput, htmlInput, open, viewer, planRoo
   }
   if (page) message += page.note;
   if (report) message += `\n${reportLine(report)}`;
+  if (looked) message += `\n${lookLines(looked).join("\n")}`;
+  const images = (looked?.sheets ?? []).map((sheet) => ({ type: "image", data: readFileSync(sheet).toString("base64"), mimeType: "image/png" }));
 
-  return { message, output: compact({ path: outputPath, viewer, ...openResult, source, report }) };
+  return { message, output: compact({ path: outputPath, viewer, ...openResult, source, report }), images };
 }
 
 function registerResources(server) {
@@ -391,7 +396,7 @@ function registerTools(server) {
       if (path === undefined && (html === undefined || filename === undefined)) throw new Error("pass html with filename, or path");
       const source = path === undefined ? undefined : readSourcePath(path, () => resolveOutputDirectory().path);
       const result = await writeRenderedHtml(source?.filename ?? filename, source?.html ?? html, open, viewer, root ?? process.cwd(), source?.source);
-      return renderToolResult(result.message, result.output);
+      return renderToolResult(result.message, result.output, result.images);
     } catch (error) {
       return renderToolError(error);
     }
