@@ -1,0 +1,55 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=Inter:opsz,wght@14..32,500..600&display=swap");
+/* Ciechanowski: light grey page, IBM Plex Sans body under Inter headings, flat parts outlined in #333, one color per part in drawing and text.
+   Values measured from ciechanow.ski; no code copied. Layered over kit/kit.css; :root beats the kit's :where(:root) tokens. Light only. */
+:root {
+  color-scheme: light;
+  --bg: #f8f8f8; --surface: #f8f8f8; --border: #eaeaea; --border-bright: #777777;
+  --text: #444444; --text-dim: #555555; --accent: #0181eb; --accent-dim: rgba(1, 129, 235, .12);
+  --ok: #6d9c37; --warn: #b38a1e; --risk: #e75b55; --info: #4590ce;
+  --red: #e75b55; --orange: #e48850; --yellow: #d3a832; --green: #6d9c37; --cyan: #4bafa7; --blue: #4590ce; --violet: #ab70b6; --gray: #999999;
+  --node-top: var(--surface); --lift: transparent; --halo: 0%;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif; --display-weight: 600;
+  --font-mono: Menlo, Consolas, monospace;
+  --stage: none; --r-1: 6px; --r-2: 8px;
+  --ease: cubic-bezier(.33, 0, .67, 1);
+  --t-h1: 2.4rem; --t-h2: 1.5rem;
+}
+
+html { font-size: 16px; }
+body { font-size: 1.2rem; line-height: 1.6; }
+main { max-width: 54rem; }
+main > header, main > section > :not(figure) { max-width: 38rem; margin-inline: auto; width: 100%; }
+h1, h2, h3 { color: #535353; letter-spacing: 0; max-width: none; }
+b, strong { font-weight: 500; }
+.eyebrow { color: var(--text-dim); font: 400 var(--t-small) var(--font-body); letter-spacing: 0; text-transform: none; }
+.eyebrow::before { display: none; }
+.caps, .ve-bnd-t, .ve-n .ve-kind, .ve-table thead th { text-transform: none; letter-spacing: 0; }
+.ve-label, .meta, .fig-n, .ve-cap li::before, .chip, .ve-table thead th, .ve-el, .ve-n .sub { font-family: var(--font-body); }
+figcaption { text-align: center; margin-inline: auto; font-size: .96rem; }
+a { color: var(--accent); }
+code { font-weight: 700; font-size: .8em; color: var(--text-dim); background: var(--border); border-radius: .4em; padding: 0 .4em; }
+
+.frame { background: none; border: 0; padding: 0; }
+.ve-n .sh { fill: #ffffff; stroke: #333333; stroke-width: 1.5; filter: none; }
+.ve-n.is-key .sh { fill: color-mix(in srgb, var(--blue) 30%, #ffffff); stroke: color-mix(in srgb, var(--blue) 75%, #000000); filter: none; }
+.ve-n text { font-weight: 500; }
+.ve-e { stroke: #333333; stroke-width: 1.5; stroke-linecap: round; }
+.ve-e.is-hot { stroke: var(--blue); filter: none; }
+.ve-dots .hit { filter: none; }
+.case, .kpi { background: none; }
+.ve-table { border: 0; }
+.ve-table thead th { background: none; }
+.js-motion main > :not(.in) { opacity: 1; transform: none; }
+button { font: 500 1rem var(--font-body); background: rgb(0 0 0 / .05); border: 0; min-width: 44px; min-height: 44px; }
+.ve-player input { accent-color: #777777; }
+
+main ul { padding-left: 2em; }
+main li + li, main li > ul { margin-top: var(--s-1); }
+
+/* One color per part: c-<color> on a text span colors the word; on an SVG part it sets a flat fill with a darker outline of the same hue. */
+.c-red { --c: var(--red); } .c-orange { --c: var(--orange); } .c-yellow { --c: var(--yellow); } .c-green { --c: var(--green); }
+.c-cyan { --c: var(--cyan); } .c-blue { --c: var(--blue); } .c-violet { --c: var(--violet); } .c-gray { --c: var(--gray); }
+span[class^="c-"] { color: var(--c); font-weight: 500; }
+svg .part { fill: color-mix(in srgb, var(--c, var(--gray)) 45%, #ffffff); stroke: color-mix(in srgb, var(--c, var(--gray)) 75%, #000000); stroke-width: 1.5; stroke-linejoin: round; }
+svg .line { fill: none; stroke: #333333; stroke-width: 1.5; stroke-linecap: round; }

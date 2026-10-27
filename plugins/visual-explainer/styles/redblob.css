@@ -1,0 +1,65 @@
+@import url("https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400&display=swap");
+/* Red Blob Games: a white column on a warm grey page, accent bands for the header and every h2, serif body under sans headings, pale grid cells.
+   Stylesheet values by Amit J. Patel, redblobgames.com, used with credit as he requests. Layered over kit/kit.css. Light only.
+   Change --hue on :root to recolor the bands and links. */
+:root {
+  color-scheme: light;
+  --hue: 0;
+  --bg: #ffffff; --surface: #ffffff; --border: #cccccc; --border-bright: #999999;
+  --text: #333333; --text-dim: #666666;
+  --accent: hsl(var(--hue) 50% 45%); --accent-dark: hsl(var(--hue) 75% 30%); --accent-dim: hsl(var(--hue) 50% 45% / .12);
+  --ok: #3d8f4a; --warn: #8f663d; --risk: #bf4040; --info: #406abf;
+  --node-top: var(--surface); --lift: transparent; --halo: 0%;
+  --font-body: "Avenir Next", Candara, Ubuntu, "Fira Sans", system-ui, "Segoe UI", sans-serif;
+  --font-serif: "Iowan Old Style", Cambria, Georgia, serif;
+  --font-display: var(--font-body); --display-weight: 700;
+  --font-mono: "Roboto Mono", "Cascadia Mono", Consolas, monospace;
+  --stage: none; --r-1: .25em; --r-2: 0;
+  --t-h1: 2rem; --t-h2: 1.25rem;
+  --cell: #f4f4f1; --cell-line: #b2b2b2; --highlight: #ffffb2; --wall: #c2a3a3; --marker: #bf4040;
+  --k-start: #bf4040; --k-frontier: #406abf; --k-reached: #8f663d; --k-reached-cell: #ccbfb3; --k-goal: #bf40aa; --k-path: #9540bf; --k-unexplored: #ddd5d5;
+}
+
+html, body { background: #e4e4e0; }
+main { max-width: 54rem; background: var(--bg); }
+main > section > :not(figure, h2) { max-width: 41.25rem; margin-inline: auto; width: 100%; }
+main p, main li, .lead { font-family: var(--font-serif); }
+main > header, main > section > h2 { color: #ffffff; background: linear-gradient(180deg, var(--accent), var(--accent-dark)); border-block: 1px solid #000000; text-shadow: 0 2px 5px rgb(0 0 0 / .8); padding: var(--s-4) var(--s-5); }
+main > header { text-align: center; justify-items: center; }
+main > header .lead, main > header .eyebrow, main > header .meta, main > header code { color: hsl(var(--hue) 40% 90%); }
+h1, h2 { letter-spacing: 0; max-width: none; }
+.eyebrow { font: 400 var(--t-small) var(--font-body); letter-spacing: 0; text-transform: none; }
+.eyebrow::before { display: none; }
+.caps, .ve-bnd-t, .ve-n .ve-kind, .ve-table thead th { text-transform: none; letter-spacing: 0; }
+.ve-label, .meta, .fig-n, .ve-cap li::before, .chip, .ve-table thead th, .ve-el, .ve-n .sub { font-family: var(--font-body); }
+figcaption { text-align: center; margin-inline: auto; font-size: .85em; }
+a { color: var(--accent); text-decoration-color: hsl(var(--hue) 20% 80%); text-underline-offset: .25em; }
+li::marker { color: hsl(var(--hue) 50% 40%); }
+code { color: #444422; }
+
+.frame { background: none; border: 0; padding: 0; }
+.ve-n .sh { fill: var(--cell); stroke: var(--cell-line); stroke-width: 1; filter: none; }
+.ve-n.is-key .sh { fill: var(--highlight); stroke: var(--marker); stroke-width: 2; filter: none; }
+.ve-n text { fill: #000000; }
+.ve-e { stroke: var(--text-dim); }
+.ve-e.is-hot { stroke: var(--accent); filter: none; }
+.ve-dots .hit { filter: none; }
+.case, .kpi { background: none; }
+.ve-table { border: 0; }
+.ve-table thead th { background: none; }
+.js-motion main > :not(.in) { opacity: 1; transform: none; }
+button { font: 700 1em var(--font-body); color: #000000; background: hsl(var(--hue) 24% 95%); border: 1px outset hsl(var(--hue) 24% 95%); }
+button:hover { background: hsl(var(--hue) 48% 46%); color: #ffffff; }
+
+main ul { padding-left: 1.5em; }
+main li + li, main li > ul { margin-top: var(--s-1); }
+
+/* Grids and concepts: a concept keeps one color on the cell, the word in the text and the name in the code. */
+svg .cell { fill: var(--cell); stroke: var(--cell-line); stroke-width: 1; }
+svg .cell.highlight { fill: var(--highlight); } svg .cell.wall { fill: var(--wall); } svg .cell.reached { fill: var(--k-reached-cell); }
+svg .cell.frontier { fill: var(--k-reached-cell); stroke: var(--k-frontier); stroke-width: 2.5; } svg .cell.unexplored { fill: var(--k-unexplored); }
+svg .trail { fill: none; stroke: currentColor; stroke-width: 10; stroke-opacity: .3; stroke-linecap: round; stroke-linejoin: round; }
+svg .marker { fill: var(--marker); stroke: none; }
+.start { color: var(--k-start); } .frontier { color: var(--k-frontier); } .reached { color: var(--k-reached); } .goal { color: var(--k-goal); } .path { color: var(--k-path); }
+:is(p, li, code) :is(.start, .frontier, .reached, .goal, .path) { font-weight: 700; }
+.legend { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: middle; background: currentColor; box-shadow: 0 0 0 1px rgb(0 0 0 / .5); }

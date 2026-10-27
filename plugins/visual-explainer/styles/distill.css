@@ -1,0 +1,51 @@
+/* Distill: white page, system sans, h2 over a hairline, small grey captions with a bold lead, grey 1.5 outlines with one accent hue for the subject.
+   Re-implements the Distill template layout (Apache-2.0, The Distill Template Authors). Layered over kit/kit.css. Light only.
+   One accent hue per page: change --accent and --accent-dim together. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff; --surface: #ffffff; --border: #e6e6e6; --border-bright: #999999;
+  --text: #333333; --text-dim: #666666; --accent: #8359b2; --accent-dim: #e0cef5;
+  --ok: #3d7f4f; --warn: #8a6100; --risk: #b3402d; --info: #666688;
+  --node-top: var(--surface); --lift: transparent; --halo: 0%;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-body); --display-weight: 700;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  --stage: none; --r-1: 0; --r-2: 0;
+  --t-h1: 50px; --t-h2: 36px;
+}
+
+html { font-size: 16px; }
+body { line-height: 1.7; }
+main { max-width: 984px; }
+main > header, main > section > :not(figure) { max-width: 704px; margin-inline: auto; width: 100%; }
+main > header .lead { font-size: 1.2rem; font-weight: 300; color: var(--text); max-width: none; }
+h1 { letter-spacing: 0; line-height: 1.1; max-width: none; }
+main > section > h2 { font-weight: 600; letter-spacing: 0; line-height: 1.25; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.eyebrow { color: #808080; font: 400 .6rem var(--font-body); letter-spacing: .05em; }
+.eyebrow::before { display: none; }
+.ve-label, .meta, .fig-n, .ve-cap li::before, .chip, .ve-table thead th, .ve-el, .ve-n .sub { font-family: var(--font-body); }
+figcaption { font-size: 13px; line-height: 1.5; }
+figcaption b, figcaption strong, .fig-n { color: #000000; font-weight: 600; }
+a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--border-bright); }
+a:hover { border-bottom-color: var(--text); }
+
+.frame { background: none; border: 0; padding: 0; }
+.ve-n .sh { fill: #ffffff; stroke: var(--border-bright); stroke-width: 1.5; filter: none; }
+.ve-n.is-key .sh { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.5; filter: none; }
+.ve-n text { fill: #000000; }
+.ve-n .sub, .ve-el { fill: var(--text-dim); }
+.ve-e { stroke: var(--border-bright); stroke-width: 1.5; }
+.ve-e.is-hot { stroke: var(--accent); stroke-width: 2; filter: none; }
+.ve-dots .hit { filter: none; }
+.case, .kpi { background: none; }
+.ve-table { border: 0; border-bottom: 1px solid #cccccc; }
+.ve-table thead th { background: none; text-transform: none; letter-spacing: 0; border-bottom: 1px solid #cccccc; }
+.ve-table td { border-bottom-color: #f2f2f2; }
+.js-motion main > :not(.in) { opacity: 1; transform: none; }
+
+main ul { padding-left: 24px; }
+main li + li, main li > ul { margin-top: var(--s-2); }
+
+/* figure parts: grey outlines; the figure's subject in the accent hue with a pale tint */
+svg .subject { stroke: var(--accent); fill: var(--accent-dim); stroke-width: 1.5; }
+svg .faint { stroke-width: .5; }

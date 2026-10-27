@@ -71,7 +71,7 @@ Read `references/words.md` before writing any text. Numbered lists for steps.
 
 ## Look
 
-Exact, calm, and visual: someone who understands the system drew every line on purpose. The style file (Deliver) sets fonts, colors and decoration. From `references/style-guide.md`, Visual principles, Typography and Figures apply to every style; the rest of it belongs to the `upstream` style. Precedence: the user's words → the project's design system → the style file.
+Exact, calm, and visual: someone who understands the system drew every line on purpose. The style file (Deliver) sets fonts, colors and decoration. `plain` unless the user names another: `upstream` (the original registers), `3b1b` (math, quantities that change), `ciechanowski` (mechanisms part by part), `redblob` (algorithms on grids and graphs), `distill` (technical essays), `tufte` (text-led pages with small static data figures). From `references/style-guide.md`, Visual principles, Typography and Figures apply to every style; the rest of it belongs to the `upstream` style. Precedence: the user's words → the project's design system → the style file.
 
 ## Known traps
 
