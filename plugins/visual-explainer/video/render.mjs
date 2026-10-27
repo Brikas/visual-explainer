@@ -13,7 +13,7 @@ const LEAD = 0.5, GAP = 0.3, TAIL = 0.9, BARE = 3; // pacing in seconds around a
 const USAGE = `Usage: visual-explainer-video <deck.html> [out.mp4] [options]
 
 Renders a video deck (<section data-say> scenes) to a 1920×1080 MP4 on a virtual clock, so
-every frame lands on time. See references/video.md.
+every frame lands on time. See references/philosophy/video.md.
 
 Options:
   --lines          Print "<id><TAB><text>" for each narration line, then stop.

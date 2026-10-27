@@ -1,0 +1,3 @@
+/* Plain: the kit's neutral tokens as they are: the browser's own fonts, dark text on white, one link-blue accent.
+   This file only narrows the page column. */
+main { max-width: 52rem; gap: var(--s-7); }

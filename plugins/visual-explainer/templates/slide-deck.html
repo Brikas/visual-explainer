@@ -3,28 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Gateway Redesign — Reference Deck</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Cpath d='M18 44V20h16a8 8 0 0 1 0 16H18' fill='none' stroke='%23ff6e50' stroke-width='5'/%3E%3C/svg%3E">
-<!-- Reference deck in the Editorial register. Copy ENGINE, CHROME, and DELIVERY CHECK as they are; restyle the rest. -->
+<title>API Gateway Redesign: Reference Deck</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111111'/%3E%3Cpath d='M18 44V20h16a8 8 0 0 1 0 16H18' fill='none' stroke='%230645ad' stroke-width='5'/%3E%3C/svg%3E">
+<!-- Reference deck with the kit's neutral tokens. Copy ENGINE, CHROME and DELIVERY CHECK as they are. Set the tokens, fonts and decoration from the deck's visual style (references/visual/). -->
 <script>document.documentElement.classList.add('js');</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light dark;
-    --font-display: 'Instrument Serif', Georgia, serif; /* headings only; reading text stays sans */
-    --font-body: 'Instrument Sans', 'Segoe UI', sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --bg: #fbfbf9; --surface: #f1f0ec; --border: #e2e0da; --border-bright: #8c8a85;
-    --text: #111111; --text-dim: #5a5853; --accent: #cc3418; --accent-dim: rgba(204,52,24,.12);
-    --ok: #1d7443; --risk: #a01d48;
+    --font-display: system-ui, sans-serif;
+    --font-body: system-ui, sans-serif;
+    --font-mono: ui-monospace, Consolas, monospace;
+    --bg: #ffffff; --surface: #f4f4f4; --border: #d4d4d4; --border-bright: #767676;
+    --text: #111111; --text-dim: #555555; --accent: #0645ad; --accent-dim: rgba(6,69,173,.1);
+    --ok: #1a7f37; --risk: #c62828;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0f0f0f; --surface: #1a1a19; --border: #2b2a28; --border-bright: #696763;
-      --text: #f2f0eb; --text-dim: #a4a19b; --accent: #ff6e50; --accent-dim: rgba(255,110,80,.14);
-      --ok: #6cc492; --risk: #f57fa2;
+      --bg: #121212; --surface: #1c1c1c; --border: #333333; --border-bright: #8a8a8a;
+      --text: #e8e8e8; --text-dim: #a8a8a8; --accent: #8ab4f8; --accent-dim: rgba(138,180,248,.14);
+      --ok: #6fcf97; --risk: #f28b82;
     }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -90,7 +87,7 @@
   .deck-overlay.open { display: grid; }
   .deck-panel { width: min(560px, 86vw); max-height: 80dvh; overflow: auto; padding: 16px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); font-family: var(--font-mono); box-shadow: 0 24px 64px rgba(0,0,0,.25); }
   .deck-panel:focus { outline: none; }
-  .deck-panel__header { margin: 2px 10px 10px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+  .deck-panel__header { margin: 2px 10px 10px; font-size: 12px; color: var(--text-dim); }
   .deck-panel__button { display: flex; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: 14px/1.3 var(--font-body); text-align: left; cursor: pointer; }
   /* Accent text on its own tint drops under 4.5:1; the tint carries the state, the text stays --text. */
   .deck-panel__button:hover, .deck-panel__button[aria-current="true"] { background: var(--accent-dim); color: var(--text); }
@@ -102,7 +99,7 @@
   .slide__hero { font: 400 clamp(56px, 11vw, 148px)/.92 var(--font-display); letter-spacing: -.035em; text-wrap: balance; max-width: 12ch; }
   .slide__heading { font: 400 clamp(32px, 5vw, 60px)/1.05 var(--font-display); letter-spacing: -.02em; text-wrap: balance; max-width: 28ch; }
   .slide__body { font-size: clamp(18px, 2vw, 24px); line-height: 1.45; color: var(--text-dim); max-width: 38ch; text-wrap: pretty; }
-  .slide__label { font: 600 clamp(12px, 1.2vw, 14px) var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .slide__label { font: 600 clamp(12px, 1.2vw, 14px) var(--font-body); color: var(--text-dim); }
   .slide__meta { display: flex; gap: 24px; padding-top: 16px; border-top: 1px solid var(--border); font: 500 clamp(12px, 1.2vw, 14px) var(--font-mono); color: var(--text-dim); }
   .slide--title { justify-content: flex-end; }
   .slide__number { position: absolute; right: clamp(32px, 8vw, 128px); top: 6vh; font: clamp(120px, 24vw, 300px)/.8 var(--font-display); color: var(--accent); }
@@ -171,7 +168,7 @@
       var excess = Math.ceil(slide.scrollHeight - slide.clientHeight), fit = slide.getAttribute('data-auto-fit');
       if (excess > 1 || fit) {
         slide.setAttribute('data-slide-check', excess > 1 ? 'overflow' : 'auto-fit');
-        slide.setAttribute('data-slide-check-label', excess > 1 ? 'OVERFLOW — split or reduce (' + excess + 'px)' : 'AUTO-FIT USED — review budget (' + fit + ')');
+        slide.setAttribute('data-slide-check-label', excess > 1 ? 'OVERFLOW: split or reduce (' + excess + 'px)' : 'AUTO-FIT USED: review budget (' + fit + ')');
         failures.push('Slide ' + (i + 1) + ': ' + (excess > 1 ? 'vertical overflow ' + excess + 'px' : 'autoFit: ' + fit));
       } else {
         slide.removeAttribute('data-slide-check'); slide.removeAttribute('data-slide-check-label');

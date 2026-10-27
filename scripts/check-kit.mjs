@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const defs = read("plugins/visual-explainer/kit/defs.svg").trim();
 const kitRules = new Set(read("plugins/visual-explainer/kit/kit.css").split("\n").map((l) => l.trim()).filter((l) => l.includes("{") && l.length > 30));
-const pages = ["plugins/visual-explainer/templates/page.html", "examples/replay-job-queue.html"];
+const pages = ["plugins/visual-explainer/references/visual/upstream-page.html", "plugins/visual-explainer/references/visual/upstream-example-replay.html"];
 
 const problems = [];
 for (const path of pages) {

@@ -2,7 +2,7 @@
 // Turns a plan source page (<ve-*> tags) into one static, self-contained HTML page.
 // It checks the plan's shape, reads cited code from disk, and inlines plan.css, kit/reply.js, and plan.js.
 // No dependencies, so it runs from a copied skill folder.
-import { readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -430,6 +430,10 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   const head = find(doc, (n) => n.name === "head")[0];
   const body = find(doc, (n) => n.name === "body")[0];
   if (!body) errors.push("missing <body>");
+  // fork: <html data-style> layers references/visual/<style>.css over plan.css; <html data-register> passes through for the upstream style
+  const style = htmlNode?.attrs["data-style"] || "plain";
+  const styleFile = join(here, "..", "references", "visual", `${style}.css`);
+  if (!existsSync(styleFile)) errors.push(`data-style="${style}" is not a style; see references/visual/`);
   if (errors.length) return { errors, warnings, files: [...filesRead] };
 
   const header = find(body, (n) => n.name === "header")[0];
@@ -469,19 +473,19 @@ export function renderPlan(source, { root = process.cwd(), editor = process.env.
   const js = [join(here, "../kit/reply.js"), join(here, "plan.js")].map((f) => readFileSync(f, "utf8")).join("\n").replace(/<\/script/gi, "<\\/script");
   const lang = htmlNode?.attrs.lang || "en";
   const bodyAttrs = body.openRaw.replace(/^<body/i, "").replace(/>$/, "");
+  const register = htmlNode?.attrs["data-register"];
   const html = `<!doctype html>
-<html lang="${esc(lang)}">
+<html lang="${esc(lang)}" data-style="${esc(style)}"${register ? ` data-register="${esc(register)}"` : ""}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(textOf(titleNode).trim())}</title>
 ${hasIcon ? "" : FAVICON}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style data-ve-plan>
 ${css}
 </style>
+<style data-ve-style="${esc(style)}">
+${readFileSync(styleFile, "utf8")}</style>
 ${keepHead}
 </head>
 <body${bodyAttrs}>

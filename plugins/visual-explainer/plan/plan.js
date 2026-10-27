@@ -1,5 +1,5 @@
 /* Plan page runtime. plan/render.mjs inlines it; the page works without it as a static, printable plan.
-   Kit (linked highlighting, flow dots, entrance) mirrors templates/page.html. Plan parts: decisions,
+   Kit (linked highlighting, flow dots, entrance) mirrors kit/kit.js. Plan parts: decisions,
    "seen" tracking, data-if, live diff stat, comments, keyboard, saved answers, and the response.
    The comment popover, the dialog, and sending or copying come from kit/reply.js, inlined before it. */
 (() => {
