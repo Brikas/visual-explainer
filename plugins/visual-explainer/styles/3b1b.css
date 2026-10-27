@@ -1,0 +1,70 @@
+/* 3Blue1Brown: manim's palette on black, Computer Modern serif, yellow for the one thing to look at now, manim's smooth easing.
+   Layered over kit/kit.css; :root beats the kit's :where(:root) tokens. Dark only. */
+@font-face { font-family: "CMU Serif"; font-style: normal; font-weight: 400; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-500-roman.woff2") format("woff2"); }
+@font-face { font-family: "CMU Serif"; font-style: italic; font-weight: 400; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-500-italic.woff2") format("woff2"); }
+@font-face { font-family: "CMU Serif"; font-style: normal; font-weight: 700; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-700-roman.woff2") format("woff2"); }
+@font-face { font-family: "CMU Serif"; font-style: italic; font-weight: 700; font-display: swap; src: url("https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/fonts/cmu-serif-700-italic.woff2") format("woff2"); }
+
+:root {
+  color-scheme: dark;
+  --bg: #000000; --surface: #000000; --panel: #222222; --border: #444444; --border-bright: #888888;
+  --text: #ffffff; --text-dim: #bbbbbb; --accent: #ffff00; --accent-dim: rgba(255, 255, 0, .14);
+  --ok: #83c167; --warn: #f0ac5f; --risk: #fc6255; --info: #58c4dd;
+  --blue: #58c4dd; --blue-d: #29abca; --teal: #5cd0b3; --green: #83c167; --yellow: #ffff00; --gold: #f0ac5f;
+  --red: #fc6255; --maroon: #c55f73; --purple: #9a72ac; --pink: #d147bd; --orange: #ff862f;
+  --node-top: var(--surface); --lift: transparent; --halo: 0%;
+  --font-body: "CMU Serif", "Latin Modern Roman", "Source Serif 4", Georgia, serif;
+  --font-display: var(--font-body); --display-weight: 400;
+  --font-mono: Consolas, ui-monospace, monospace;
+  --stage: none; --r-1: 0; --r-2: 0;
+  --ease: cubic-bezier(.5, 0, .5, 1); --med: .5s; --slow: 1s;
+  --t-h1: 2.6rem; --t-h2: 1.75rem;
+}
+
+html { font-size: 105%; }
+body { line-height: 1.8; }
+main { max-width: 62.5rem; }
+main > header, main > section > :not(figure) { max-width: 43.75rem; margin-inline: auto; width: 100%; }
+h1, h2, h3 { text-align: center; letter-spacing: .02em; max-width: none; text-wrap: balance; }
+header { justify-items: center; }
+header > :not(.lead) { text-align: center; }
+.eyebrow { color: var(--text-dim); font: 400 var(--t-small) var(--font-body); letter-spacing: 0; text-transform: none; }
+.eyebrow::before { display: none; }
+.caps, .ve-bnd-t, .ve-n .ve-kind, .ve-table thead th { text-transform: none; letter-spacing: 0; }
+.ve-label, .meta, .fig-n, .ve-cap li::before, button, .chip, .ve-table thead th { font-family: var(--font-body); }
+figcaption { text-align: center; margin-inline: auto; }
+a { color: var(--blue); }
+code { background: var(--panel); padding: 1px .3rem; }
+
+.frame { background: none; border: 0; padding: 0; }
+.ve-n .sh { fill: var(--bg); stroke: var(--text-dim); stroke-width: 1.8; filter: none; }
+.ve-n.is-key .sh { fill: var(--bg); stroke: var(--blue); stroke-width: 3.6; filter: none; }
+.ve-n text, .ve-el, .ve-n .sub, .ve-axis-t, .ve-dim text, .ve-co text, .ve-stack text { font-family: var(--font-body); }
+.ve-e { stroke: var(--text-dim); stroke-width: 1.8; }
+.ve-e.is-hot { stroke: var(--blue); stroke-width: 3.6; filter: none; }
+.ve-dots .hit { filter: none; }
+.case, .kpi { background: none; }
+.ve-table { border: 0; }
+.ve-table thead th { background: none; color: var(--text); }
+.js-motion main > :not(.in) { opacity: 1; transform: none; }
+
+main ul { padding-left: 1.25em; }
+main li + li, main li > ul { margin-top: var(--s-1); }
+
+/* Math figures in a 1280x720 viewBox (1 manim unit = 90 SVG units; stroke widths are manim stroke_width x 0.9). */
+.c-blue { --c: var(--blue); } .c-teal { --c: var(--teal); } .c-green { --c: var(--green); } .c-yellow { --c: var(--yellow); }
+.c-gold { --c: var(--gold); } .c-red { --c: var(--red); } .c-maroon { --c: var(--maroon); } .c-purple { --c: var(--purple); }
+.c-pink { --c: var(--pink); } .c-orange { --c: var(--orange); } .c-grey { --c: var(--text-dim); }
+span[class^="c-"] { color: var(--c); transition: color var(--slow) var(--ease); }
+svg .axis, svg .tick { fill: none; stroke: var(--text-dim); stroke-width: 1.8; }
+svg .grid { fill: none; stroke: var(--blue-d); stroke-width: 1.8; }
+svg .grid-faint { fill: none; stroke: var(--blue-d); stroke-width: .9; stroke-opacity: .25; }
+svg .curve, svg .shape { fill: none; stroke: var(--c, var(--blue)); stroke-width: 3.6; stroke-linejoin: miter; stroke-linecap: butt; }
+svg .shape { fill: var(--c, var(--blue)); fill-opacity: .25; }
+svg .thin { stroke-width: 1.8; }
+svg .dashed { stroke-dasharray: 4.5 4.5; }
+svg .vec { fill: var(--c, var(--text-dim)); stroke: none; }
+svg .dot { fill: var(--c, var(--text)); stroke: none; }
+svg .label { fill: var(--c, var(--text)); stroke: var(--bg); stroke-width: 2.7; paint-order: stroke; stroke-linejoin: round; font: 36px var(--font-body); text-anchor: middle; }
+svg .label.small { font-size: 24px; }
+.katex { font-size: 1.1em; }

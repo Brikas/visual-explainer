@@ -1,11 +1,11 @@
 # Adaptation
 
-This skill is a private fork of an upstream skill. The fork keeps its own commits on top of upstream and merges upstream from time to time. This file is the rule set for those merges.
+This skill is a GitHub fork of an upstream skill. The fork keeps its own commits on top of upstream and merges upstream from time to time. This file is the rule set for those merges.
 
 ## Repositories
 
 - **Upstream:** `https://github.com/nicobailon/visual-explainer`, git remote `upstream`.
-- **Fork:** `https://github.com/Brikas/visual-explainer` (private), git remote `origin`, branch `main`.
+- **Fork:** `https://github.com/Brikas/visual-explainer`, git remote `origin`, branch `main`. A fresh clone has no `upstream` remote; add it once.
 
 ## Layers
 
