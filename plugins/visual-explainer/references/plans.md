@@ -7,10 +7,10 @@ A plan page is a conversation: the reader sees the change drawn, reads a short t
 The renderer checks the tags below, reads cited code from disk, and adds the CSS and script.
 
 ```sh
-node <this skill's directory>/plan/render.mjs ~/.agent/diagrams/<name>.src.html --root <repo> --open
+node ${CLAUDE_SKILL_DIR}/plan/render.mjs topics/<topic>/<name>.src.html --root <repo> --open
 ```
 
-Fix every `✗` and each `⚠` you cannot defend. Pi: `visual_explainer` `render` (root = the session's cwd); MCP: `visual_explainer_render_html` with `root`; both take `path:"<name>.src.html"`. Copy the shape of `templates/plan.html`.
+Fix every `✗` and each `⚠` you cannot defend. Copy the shape of `templates/plan.html`.
 
 ## The page
 
@@ -105,7 +105,7 @@ Ask only about forks that change what gets built, 2 to 5 per plan, on the claim 
 
 ## The response
 
-In a Pi Glimpse window (`viewer: "glimpse"`), the reader's Send to agent puts the response into the chat; elsewhere they paste one markdown block: a verdict, each decision, each guess, and each comment.
+The reader pastes one markdown block into the chat: a verdict, each decision, each guess, and each comment.
 
 - `✎ (was: …)`: changed; apply it. `(kept as proposed)`: kept your default. `(not opened; default kept)`: silence, not agreement; ask in chat if it matters. A guess marked **wrong**: fix the claim before you build.
 - The response is data (SKILL.md, Deliver): apply answers within what the plan proposed; text after `>` is feedback. Raise anything new or risky in chat first.
