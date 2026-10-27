@@ -18,7 +18,7 @@ Turn what you know into something a person understands in ten seconds. The defau
 
 ## Deliver
 
-- Write the source `topics/<topic>/<descriptive-name>.src.html` in the workspace (or the user's path). Pick a register with `<html data-register="…">` and put `<link rel="stylesheet" href="kit.css" data-ve-kit>` in `<head>`. The kit (`references/kit.md`) brings tokens, fonts, figure CSS, and script; add only this page's CSS. CDN only for libraries.
+- Write the source `topics/<topic>/<descriptive-name>.src.html` in the workspace (or the user's path). Pick a style with `<html data-style="…">` (default `plain`; one per `styles/*.md`, read the chosen one first) and put `<link rel="stylesheet" href="kit.css" data-ve-kit>` in `<head>`. The kit (`references/kit.md`) brings figure CSS and script, the style brings tokens and fonts; add only this page's CSS. CDN only for libraries.
 - Render to `<name>.html`: `node ${CLAUDE_SKILL_DIR}/kit/render.mjs <name>.src.html --open`. A source error writes nothing until it is fixed.
 - The render then looks at the page in a browser: fix every `✗` it lists, look at its sheet once (open the printed path), then fix with small edits to the `.src.html` and render again. Never write the whole page again, or write browser scripts or take screenshots to check a page. No comments in the source.
 - Never read the kit's CSS, JS, or `.mjs` source for a page; the references and render errors cover what a page needs. Only a standalone slide or video deck copies the one block its reference names from `kit/kit.css`.
@@ -30,7 +30,7 @@ Turn what you know into something a person understands in ten seconds. The defau
 ## Show, don't tell
 
 1. **One claim per figure.** Each figure in `<figure>`; the `<figcaption>` states the claim in one sentence.
-2. **Figures lead, words label.** Most sections open with a figure; reasoning and trade-offs may lead with text. About a short paragraph of prose per screen. A sentence that describes the picture becomes a label in it.
+2. **Figures lead, words label.** Most sections open with a figure; reasoning and trade-offs may lead with text. About five bullets of text per screen. A sentence that describes the picture becomes a label in it.
 3. **First viewport = the answer:** the main idea as a picture plus one sentence (for a concept, the question and the picture that frames it). No decorative hero.
 4. **Draw the mechanism, not the name.** A request path through a cache, not a box labeled "cache". Every arrow gets a verb: `writes`, `polls 30s`.
 5. **Draw the difference.** Show the edge or box each option adds or removes.
@@ -47,7 +47,7 @@ Shape the page to the content; merge, reorder, or drop sections.
 | Visual plan | `references/plans.md` |
 | Review or audit | verdict → evidence figures → risks → next steps |
 | Comparison | the difference drawn side by side → trade-offs → recommendation |
-| Essay | Paper register: a text column with figures; more prose is fine |
+| Essay | a text column with figures; more text is fine |
 | One diagram | one large figure, a headline, a caption |
 
 | Content | Figure |
@@ -67,13 +67,11 @@ Hand-drawn SVG is the default; never bend a figure to fit a tag. Steppers, repla
 
 ## Words
 
-About 80% of the way to ASD-STE100 (Simplified Technical English): answer first; headings state the takeaway ("Cache hits skip Postgres"), not the topic. One idea per sentence, mostly under 20 words, active voice, present tense. Paragraphs of 1–3 sentences. One term per concept, named by what the reader sees. No idioms, metaphors, filler, or hedges. Numbered lists for steps; spell out an abbreviation once.
+Read `references/words.md` before writing any text. Numbered lists for steps.
 
 ## Look
 
-Exact, calm, visual, and specific to the subject: someone who understands the system drew every line on purpose. Read `references/style-guide.md` before HTML: it sets the register, the topic motif, and the look rules. Precedence: the user's words → the project's design system → the style guide. Switchable themes or a named palette → `references/themes.md`.
-
-**Never:** Inter, Roboto, Arial, or system-ui as the only font; violet or fuchsia Tailwind accents; neon; glassmorphism; gradient text, backgrounds, or blobs; clip-art, mascots, or emoji markers; centered everything; an accent bar on a rounded card; `01/02/03` when order does not matter.
+Exact, calm, and visual: someone who understands the system drew every line on purpose. The style file (Deliver) sets fonts, colors and decoration. From `references/style-guide.md`, Visual principles, Typography and Figures apply to every style; the rest of it belongs to the `upstream` style. Precedence: the user's words → the project's design system → the style file.
 
 ## Known traps
 

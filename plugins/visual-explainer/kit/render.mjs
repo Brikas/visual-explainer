@@ -3,7 +3,7 @@
 // gets the kit's CSS, fonts, SVG defs, and script inlined at that marker; a plan source goes to plan/render.mjs.
 // Only the marker elements change, so a rendered page renders to itself. No installed dependencies (Pele is vendored), so it runs
 // from a copied skill folder.
-import { lstatSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -64,6 +64,10 @@ export function renderPage(source, { sendBack = false } = {}) {
   if (links.length > 1) errors.push(`${links.length} <link data-ve-kit> elements; keep one in <head>`);
   const register = find(doc, (n) => n.name === "html")[0]?.attrs["data-register"] || "instrument";
   if (!FONTS[register]) errors.push(`data-register="${register}" is not a register; use ${Object.keys(FONTS).join(", ")}`);
+  // fork: <html data-style> layers styles/<style>.css over the kit; only the "upstream" style loads the register's web fonts
+  const style = find(doc, (n) => n.name === "html")[0]?.attrs["data-style"] || "plain";
+  const styleFile = join(here, "..", "styles", `${style}.css`);
+  if (!existsSync(styleFile)) errors.push(`data-style="${style}" is not a style; use ${readdirSync(join(here, "..", "styles")).filter((f) => f.endsWith(".css")).map((f) => f.slice(0, -4)).join(", ")}`);
   const body = find(doc, (n) => n.name === "body")[0];
   if (!body) errors.push("the page has no <body>");
   // a box or arrow keeps the data-ref and data-s it was written with, so it lights with its terms and its steps
@@ -131,11 +135,14 @@ export function renderPage(source, { sendBack = false } = {}) {
   const script = `<script data-ve-kit${sendBack ? " data-send-back" : ""}>\n${js}</script>`;
   // without a charset, Firefox and Safari garble · and — (prepareRenderedHtml adds the viewport)
   const charset = find(doc, (n) => n.name === "meta" && ("charset" in n.attrs || /^content-type$/i.test(n.attrs["http-equiv"] ?? ""))).length ? "" : '<meta charset="utf-8">\n';
-  links[0].html = `${charset}<link rel="preconnect" href="https://fonts.googleapis.com">
+  const fonts = style !== "upstream" ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?${esc(FONTS[register])}&amp;display=swap" rel="stylesheet">
-<style data-ve-kit>
-${css}</style>`;
+`;
+  links[0].html = `${charset}${fonts}<style data-ve-kit>
+${css}</style>
+<style data-ve-style="${esc(style)}">
+${readFileSync(styleFile, "utf8")}</style>`;
   // The shared defs go first in <body>, each only if the page has no element with its id (the template has all four, so it opens raw).
   const defs = readFileSync(join(here, "defs.svg"), "utf8").trimEnd().split("\n").filter((line) => {
     const id = line.match(/^\s*<\w+ id="([^"]+)"/)?.[1];
